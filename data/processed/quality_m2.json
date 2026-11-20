@@ -1,0 +1,30 @@
+{
+  "mission": 2,
+  "events_per_category": {
+    "Rare Event": 613,
+    "Anomaly": 31
+  },
+  "label_rows": 11167,
+  "label_rows_no_channel": 0,
+  "label_rows_end_before_start": 0,
+  "long_events": [
+    {
+      "id": "m2_id_633",
+      "category": "Anomaly",
+      "span_h": 465.2
+    }
+  ],
+  "feature_status": {
+    "ok": 644
+  },
+  "channel_status": {
+    "ok": 10653,
+    "few_window_samples": 101
+  },
+  "channels_flagged_categorical_in_channels_csv": 10,
+  "channel_kinds_used": {
+    "numeric": 47
+  },
+  "reversed_rows_vs_telemetry": [],
+  "seconds": 40.2
+}

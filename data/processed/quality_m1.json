@@ -1,0 +1,214 @@
+{
+  "mission": 1,
+  "events_per_category": {
+    "Anomaly": 118,
+    "Rare Event": 78,
+    "Communication Gap": 4
+  },
+  "label_rows": 3589,
+  "label_rows_no_channel": 0,
+  "label_rows_end_before_start": 0,
+  "long_events": [
+    {
+      "id": "m1_id_1",
+      "category": "Rare Event",
+      "span_h": 356.2
+    },
+    {
+      "id": "m1_id_10",
+      "category": "Anomaly",
+      "span_h": 222.8
+    },
+    {
+      "id": "m1_id_100",
+      "category": "Rare Event",
+      "span_h": 172.1
+    },
+    {
+      "id": "m1_id_101",
+      "category": "Anomaly",
+      "span_h": 273.3
+    },
+    {
+      "id": "m1_id_102",
+      "category": "Anomaly",
+      "span_h": 218.3
+    },
+    {
+      "id": "m1_id_103",
+      "category": "Anomaly",
+      "span_h": 242.8
+    },
+    {
+      "id": "m1_id_116",
+      "category": "Anomaly",
+      "span_h": 375.8
+    },
+    {
+      "id": "m1_id_117",
+      "category": "Rare Event",
+      "span_h": 256.8
+    },
+    {
+      "id": "m1_id_12",
+      "category": "Anomaly",
+      "span_h": 207.5
+    },
+    {
+      "id": "m1_id_123",
+      "category": "Rare Event",
+      "span_h": 263.5
+    },
+    {
+      "id": "m1_id_128",
+      "category": "Rare Event",
+      "span_h": 172.5
+    },
+    {
+      "id": "m1_id_133",
+      "category": "Rare Event",
+      "span_h": 272.8
+    },
+    {
+      "id": "m1_id_134",
+      "category": "Anomaly",
+      "span_h": 967.1
+    },
+    {
+      "id": "m1_id_136",
+      "category": "Rare Event",
+      "span_h": 172.0
+    },
+    {
+      "id": "m1_id_139",
+      "category": "Rare Event",
+      "span_h": 250.8
+    },
+    {
+      "id": "m1_id_14",
+      "category": "Rare Event",
+      "span_h": 569.5
+    },
+    {
+      "id": "m1_id_145",
+      "category": "Anomaly",
+      "span_h": 311.2
+    },
+    {
+      "id": "m1_id_147",
+      "category": "Rare Event",
+      "span_h": 265.5
+    },
+    {
+      "id": "m1_id_151",
+      "category": "Rare Event",
+      "span_h": 335.5
+    },
+    {
+      "id": "m1_id_154",
+      "category": "Rare Event",
+      "span_h": 196.3
+    },
+    {
+      "id": "m1_id_155",
+      "category": "Rare Event",
+      "span_h": 265.7
+    },
+    {
+      "id": "m1_id_159",
+      "category": "Rare Event",
+      "span_h": 261.0
+    },
+    {
+      "id": "m1_id_164",
+      "category": "Rare Event",
+      "span_h": 220.2
+    },
+    {
+      "id": "m1_id_167",
+      "category": "Anomaly",
+      "span_h": 318.0
+    },
+    {
+      "id": "m1_id_169",
+      "category": "Rare Event",
+      "span_h": 265.2
+    },
+    {
+      "id": "m1_id_180",
+      "category": "Rare Event",
+      "span_h": 413.2
+    },
+    {
+      "id": "m1_id_21",
+      "category": "Rare Event",
+      "span_h": 387.2
+    },
+    {
+      "id": "m1_id_25",
+      "category": "Anomaly",
+      "span_h": 190.5
+    },
+    {
+      "id": "m1_id_59",
+      "category": "Rare Event",
+      "span_h": 216.2
+    },
+    {
+      "id": "m1_id_77",
+      "category": "Rare Event",
+      "span_h": 179.7
+    },
+    {
+      "id": "m1_id_78",
+      "category": "Rare Event",
+      "span_h": 247.0
+    },
+    {
+      "id": "m1_id_80",
+      "category": "Rare Event",
+      "span_h": 308.0
+    },
+    {
+      "id": "m1_id_81",
+      "category": "Rare Event",
+      "span_h": 256.6
+    },
+    {
+      "id": "m1_id_87",
+      "category": "Rare Event",
+      "span_h": 261.1
+    },
+    {
+      "id": "m1_id_88",
+      "category": "Rare Event",
+      "span_h": 224.7
+    },
+    {
+      "id": "m1_id_89",
+      "category": "Anomaly",
+      "span_h": 190.1
+    },
+    {
+      "id": "m1_id_95",
+      "category": "Rare Event",
+      "span_h": 202.2
+    }
+  ],
+  "feature_status": {
+    "ok": 180,
+    "no_usable_channel": 16,
+    "not_computed": 4
+  },
+  "channel_status": {
+    "ok": 2298,
+    "few_window_samples": 346,
+    "few_baseline_samples": 22
+  },
+  "channels_flagged_categorical_in_channels_csv": 0,
+  "channel_kinds_used": {
+    "numeric": 58
+  },
+  "reversed_rows_vs_telemetry": [],
+  "seconds": 53.0
+}

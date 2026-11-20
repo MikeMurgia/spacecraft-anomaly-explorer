@@ -1,0 +1,151 @@
+import numpy as np
+import pandas as pd
+import pytest
+
+from pipeline.features import (
+    categorical_channels,
+    channel_event_features,
+    compute_mission_features,
+    frozen_share,
+    interval_mask,
+    state_shift,
+    summarise_events,
+)
+from pipeline.labels import group_events, parse_intervals
+from tests.helpers import write_zipped_pickle
+
+T0 = pd.Timestamp("2000-01-01")
+MINUTE = pd.Timedelta(minutes=1)
+
+
+def minutes(n, start=T0):
+    return pd.date_range(start, periods=n, freq="min")
+
+
+def test_interval_mask_marks_inside_points_only():
+    index = minutes(10)
+    mask = interval_mask(index, [index[2], index[6]], [index[3], index[7]])
+    assert mask.nonzero()[0].tolist() == [2, 3, 6, 7]
+
+
+def test_frozen_share_skips_pairs_across_a_gap():
+    times = pd.DatetimeIndex([T0, T0 + MINUTE, T0 + 2 * MINUTE, T0 + 60 * MINUTE])
+    values = np.array([1.0, 1.0, 2.0, 2.0])
+    # the last pair is 58 minutes apart, so only the first two pairs count: one repeat out of two
+    assert frozen_share(times, values, max_step=5 * MINUTE) == pytest.approx(0.5)
+
+
+def make_series(window_values, rng):
+    """24 h of noisy baseline, then the given window values, at one sample per minute."""
+    baseline = rng.normal(0, 1, 24 * 60)
+    values = np.concatenate([baseline, window_values])
+    return pd.Series(values, index=minutes(len(values)))
+
+
+@pytest.mark.parametrize(
+    ("window_kind", "expect_lvr_sign", "expect_frozen_up"),
+    [("swings", 1, False), ("frozen", -1, True)],
+)
+def test_channel_event_features_detects_swings_and_freezes(window_kind, expect_lvr_sign, expect_frozen_up):
+    rng = np.random.default_rng(0)
+    window = rng.normal(0, 10, 120) if window_kind == "swings" else np.full(120, 0.3)
+    series = make_series(window, rng)
+    start = series.index[24 * 60]
+    out = channel_event_features(
+        series,
+        masked=np.zeros(len(series), dtype=bool),
+        window_starts=[start],
+        window_ends=[series.index[-1]],
+        baseline_start=start - pd.Timedelta(hours=6),
+        baseline_end=start,
+        floor=1e-6,
+        max_step=5 * MINUTE,
+    )
+    assert out["status"] == "ok"
+    assert np.sign(out["log_var_ratio"]) == expect_lvr_sign
+    assert (out["frozen_delta"] > 0.5) == expect_frozen_up
+
+
+def test_masked_baseline_samples_are_not_used():
+    rng = np.random.default_rng(1)
+    series = make_series(rng.normal(0, 1, 60), rng)
+    start = series.index[24 * 60]
+    masked = np.zeros(len(series), dtype=bool)
+    masked[: 24 * 60] = True  # the whole baseline is covered by other labelled events
+    out = channel_event_features(
+        series, masked, [start], [series.index[-1]], start - pd.Timedelta(hours=6), start, 1e-6, 5 * MINUTE
+    )
+    assert out == {"kind": "numeric", "n_window": 60, "n_baseline": 0, "status": "few_baseline_samples"}
+
+
+def test_compute_mission_features_end_to_end(tmp_path):
+    """A fake mission: one anomaly that freezes channel_1, one rare event elsewhere, one reversed row."""
+    rng = np.random.default_rng(2)
+    values = rng.normal(0, 1, 3 * 24 * 60)
+    values[2 * 24 * 60 : 2 * 24 * 60 + 120] = 0.5  # frozen for two hours on day 3
+    frame = pd.DataFrame({"channel_1": values}, index=minutes(len(values)).tz_localize("UTC"))
+    (tmp_path / "channels").mkdir()
+    write_zipped_pickle(tmp_path / "channels" / "channel_1.zip", frame)
+
+    day3 = (T0 + pd.Timedelta(days=2)).isoformat()
+    day3_2h = (T0 + pd.Timedelta(days=2, hours=2)).isoformat()
+    labels = pd.DataFrame(
+        {
+            "id": ["id_1", "id_2", "id_3"],
+            "channel": ["channel_1", "channel_9", "channel_1"],
+            "starttime": [day3, day3, "2000-01-02T02:00:00"],
+            "endtime": [day3_2h, day3_2h, "2000-01-02T01:00:00"],  # id_3 ends before it starts
+        }
+    )
+    types = pd.DataFrame(
+        {"id": ["id_1", "id_2", "id_3"], "category": ["Anomaly", "Rare Event", "Communication Gap"]}
+    )
+    channels = pd.DataFrame({"channel": ["channel_1"], "subsystem": ["subsystem_1"]})
+    intervals = parse_intervals(labels)
+    events = group_events(intervals, types, channels, mission=1)
+
+    features, reversed_check = compute_mission_features(1, tmp_path, events, intervals, log=lambda _: None)
+
+    by_pair = features.set_index(["id", "channel"])
+    frozen = by_pair.loc[("m1_id_1", "channel_1")]
+    assert frozen["status"] == "ok"
+    assert frozen["log_var_ratio"] < -5  # the freeze makes the window far quieter than the baseline
+    assert frozen["frozen_delta"] > 0.9
+    assert by_pair.loc[("m1_id_2", "channel_9"), "status"] == "no_file"
+    assert reversed_check.loc[0, "samples_found"] == 61  # the telemetry has data, so it is not a real gap
+
+    summary = summarise_events(events, features).set_index("id")
+    assert summary.loc["m1_id_1", "feature_status"] == "ok"
+    assert summary.loc["m1_id_2", "feature_status"] == "no_usable_channel"
+    assert summary.loc["m1_id_3", "feature_status"] == "not_computed"
+
+
+def test_categorical_channels_reads_the_flag():
+    channels = pd.DataFrame({"channel": ["a", "b", "c"], "categorical": ["YES", "NO", "True"]})
+    assert categorical_channels(channels) == {"a", "c"}
+
+
+def test_state_shift():
+    assert state_shift(np.array([0, 0, 1, 1]), np.array([0, 0, 1, 1]), 2) == pytest.approx(0.0)
+    assert state_shift(np.array([1, 1]), np.array([0, 0]), 2) == pytest.approx(1.0)
+
+
+def test_categorical_channel_that_switches_to_a_new_state():
+    """Baseline flips between states 0 and 1; during the event it sits in a state never seen before."""
+    labels = ["value_0", "value_1"] * (12 * 60) + ["value_2"] * 120
+    series = pd.Series(pd.Categorical(labels), index=minutes(len(labels)))
+    start = series.index[24 * 60]
+    out = channel_event_features(
+        series,
+        np.zeros(len(series), dtype=bool),
+        [start],
+        [series.index[-1]],
+        start - pd.Timedelta(hours=6),
+        start,
+        0.0,
+        5 * MINUTE,
+    )
+    assert out["kind"] == "categorical"
+    assert out["state_shift"] == pytest.approx(1.0)  # completely different states
+    assert out["frozen_delta"] == pytest.approx(1.0)  # it never repeated before; now it never changes
+    assert "log_var_ratio" not in out  # variance is meaningless for labels
