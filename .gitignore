@@ -1,0 +1,30 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- Secrets and local settings ---
+.env
+.env.*
+
+# --- Editors and OS ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Raw ESA-ADB data: never commit (several GB, and it has its own licence) ---
+ESA-Mission*/
+ESA-ADB*/
+data/raw/
+
+# --- Large or personal artefacts ---
+*.zip
+*.mp4
+*.mov

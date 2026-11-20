@@ -1,0 +1,22 @@
+# Project metadata and tool settings. Dependencies live in requirements*.txt.
+[project]
+name = "spacecraft-anomaly-explorer"
+version = "0.1.0"
+description = "When a spacecraft signal looks unusual, is it actually a fault? Interactive D3 explorer of ESA-ADB events."
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Michael Murgia" }]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import order, B likely bugs, UP modern syntax,
+# SIM simplifications, NPY NumPy-specific checks.
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "NPY"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

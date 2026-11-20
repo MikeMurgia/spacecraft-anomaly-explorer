@@ -1,0 +1,8 @@
+# Runtime dependencies, pinned so the pipeline gives the same numbers on every machine.
+# Needs Python 3.12 or newer (numpy 2.5 dropped 3.11).
+fastapi==0.163.2
+uvicorn==0.54.0
+pandas==3.1.1
+numpy==2.5.5
+pyarrow==26.0.1
+scikit-learn==1.9.1
