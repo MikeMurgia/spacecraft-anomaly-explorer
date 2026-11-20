@@ -43,7 +43,25 @@ GitHub Actions runs the same three checks on every push and pull request.
 
 ## Regenerating the data
 
-_Filled in during Phase 1._ The raw dataset is not in this repo; see [data/README.md](data/README.md).
+The raw dataset is not in this repo. Download it and put `ESA-Mission1..3` in `data/raw/`
+(see [data/README.md](data/README.md)), then, with the virtual environment active:
+
+```powershell
+python -m pipeline.prep_data       # raw ESA files -> data/processed/  (about 3 minutes)
+python -m pipeline.export_static   # data/processed/ -> frontend/api/  (the website's data)
+```
+
+`python -m pipeline.inspect_data` prints a read-only summary of the raw files.
+
+## Running locally
+
+```powershell
+uvicorn backend.main:app --reload   # then open http://127.0.0.1:8000/
+```
+
+The server is optional: it serves the console plus a small JSON API (`/api/meta`,
+`/api/events?mission=2`, `/api/events/m2_id_588/signals`). The hosted site reads the same
+exported files directly from `frontend/api/`.
 
 ## Data and attribution
 

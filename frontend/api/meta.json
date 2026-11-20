@@ -1,0 +1,55 @@
+{
+  "missions": [
+    {
+      "mission": 1,
+      "events_per_category": {
+        "Anomaly": 118,
+        "Rare Event": 78,
+        "Communication Gap": 4
+      },
+      "anomalies": 118,
+      "rare_events": 78,
+      "first": "2000-02-10T01:31:16.347000Z",
+      "last": "2013-12-06T06:44:59.943000Z",
+      "channels_in_mission": 76,
+      "has_variance_ratio": true,
+      "has_state_shift": false,
+      "scored": true
+    },
+    {
+      "mission": 2,
+      "events_per_category": {
+        "Rare Event": 613,
+        "Anomaly": 31
+      },
+      "anomalies": 31,
+      "rare_events": 613,
+      "first": "2000-01-01T02:58:28.302000Z",
+      "last": "2003-06-30T06:13:04.308000Z",
+      "channels_in_mission": 100,
+      "has_variance_ratio": true,
+      "has_state_shift": false,
+      "scored": true
+    },
+    {
+      "mission": 3,
+      "events_per_category": {
+        "Communication Gap": 397,
+        "Invalid Segment": 156,
+        "Rare Event": 25,
+        "Anomaly": 8
+      },
+      "anomalies": 8,
+      "rare_events": 25,
+      "first": "2000-01-07T17:35:43.122000Z",
+      "last": "2008-11-10T22:46:10.122000Z",
+      "channels_in_mission": 48,
+      "has_variance_ratio": false,
+      "has_state_shift": true,
+      "scored": false
+    }
+  ],
+  "bins": 200,
+  "dataset": "De Canio, G., Kotowski, K., & Haskamp, C. (2025). ESA Anomalies Dataset (ESA-ADB). European Space Agency. https://doi.org/10.5281/zenodo.15237121",
+  "dataset_licence": "CC BY 3.0 IGO"
+}
