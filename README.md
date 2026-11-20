@@ -49,6 +49,7 @@ The raw dataset is not in this repo. Download it and put `ESA-Mission1..3` in `d
 ```powershell
 python -m pipeline.prep_data       # raw ESA files -> data/processed/  (about 3 minutes)
 python -m pipeline.export_static   # data/processed/ -> frontend/api/  (the website's data)
+python -m pipeline.evaluate        # detectors -> frontend/api/results.json + results table (~2 minutes)
 ```
 
 `python -m pipeline.inspect_data` prints a read-only summary of the raw files.
@@ -62,6 +63,15 @@ uvicorn backend.main:app --reload   # then open http://127.0.0.1:8000/
 The server is optional: it serves the console plus a small JSON API (`/api/meta`,
 `/api/events?mission=2`, `/api/events/m2_id_588/signals`). The hosted site reads the same
 exported files directly from `frontend/api/`.
+
+## Evaluation (Phase 2)
+
+`python -m pipeline.evaluate` scores every labelled Anomaly / Rare Event with each detector in
+`pipeline/detectors/` and prints ROC-AUC and PR-AUC with 95% bootstrap intervals. This is
+**event-level scoring** (is this labelled event a real fault?), not a streaming detector.
+Details: repeated stratified 5-fold cross-validation (10 repeats, fixed seed), 2000 stratified
+bootstrap resamples, Mission 2 -> Mission 1 transfer, and alarm-budget curves (anomalies caught
+vs false alarms per month). Mission 3 has 8 anomalies, too few to score, and is shown descriptively.
 
 ## Data and attribution
 

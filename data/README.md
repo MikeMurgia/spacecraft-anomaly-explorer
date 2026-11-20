@@ -82,8 +82,16 @@ For each (event, channel):
   recorded with `status` = `few_window_samples` / `few_baseline_samples`. Other statuses:
   `no_file`, `read_error`, `empty_file`, `constant_channel`.
 
-Event-level features are medians across the channels with status `ok`: `lvr_median`,
-`frozen_delta_median`; plus `lvr_absmax` (largest |log_var_ratio|) and `n_channels_read`.
+- **Channel alarm (display only).** `alarm_h` = hours from the event start to the first of:
+  a sample more than 4 baseline standard deviations from the baseline mean (`spike`); the moment
+  a run of identical values grows longer than any run in the baseline (`freeze`); for categorical
+  channels, the first sample in a state other than the baseline's most common one (`state`). It
+  orders channels by "earliest move" in the app. It is not one of the evaluated detectors.
+
+Event-level features are medians across the channels with status `ok`: `lvr_median` (numeric
+channels), `state_shift_median` (categorical channels), `frozen_delta_median` (all); plus
+`lvr_absmax` (largest |log_var_ratio|), `n_channels_read`, `n_categorical_read`,
+`n_channels_alarmed` and `first_alarm_h`.
 `feature_status` is `ok`, `no_usable_channel`, or `not_computed` (other categories).
 
 ### 3. Normalisation

@@ -149,3 +149,49 @@ def test_categorical_channel_that_switches_to_a_new_state():
     assert out["state_shift"] == pytest.approx(1.0)  # completely different states
     assert out["frozen_delta"] == pytest.approx(1.0)  # it never repeated before; now it never changes
     assert "log_var_ratio" not in out  # variance is meaningless for labels
+
+
+def run_alarm(series, window_minutes):
+    """Run channel_event_features on the last `window_minutes` samples, with a 6-hour baseline."""
+    start = series.index[-window_minutes]
+    floor = 0.0 if isinstance(series.dtype, pd.CategoricalDtype) else 1e-6
+    return channel_event_features(
+        series,
+        np.zeros(len(series), dtype=bool),
+        [start],
+        [series.index[-1]],
+        start - pd.Timedelta(hours=6),
+        start,
+        floor,
+        5 * MINUTE,
+    )
+
+
+def test_spike_alarm_fires_at_the_first_far_sample():
+    rng = np.random.default_rng(4)
+    window = rng.normal(0, 1, 60)
+    window[30] = 25.0  # 25 baseline standard deviations away
+    out = run_alarm(make_series(window, rng), 60)
+    assert out["alarm_kind"] == "spike"
+    assert out["alarm_h"] == pytest.approx(30 / 60)
+
+
+def test_freeze_alarm_fires_when_a_run_outlasts_the_baseline():
+    rng = np.random.default_rng(5)
+    out = run_alarm(make_series(np.full(60, 0.1), rng), 60)  # continuous noise never repeats exactly
+    assert out["alarm_kind"] == "freeze"
+    assert out["alarm_h"] < 5 / 60  # within a few minutes of the event start
+
+
+def test_state_alarm_fires_on_the_first_unusual_state():
+    labels = ["value_0"] * (24 * 60) + ["value_0"] * 10 + ["value_3"] * 50
+    series = pd.Series(pd.Categorical(labels), index=minutes(len(labels)))
+    out = run_alarm(series, 60)
+    assert out["alarm_kind"] == "state"
+    assert out["alarm_h"] == pytest.approx(10 / 60)
+
+
+def test_no_alarm_when_the_window_looks_like_the_baseline():
+    rng = np.random.default_rng(6)
+    out = run_alarm(make_series(rng.normal(0, 1, 60), rng), 60)
+    assert out["alarm_h"] is None and out["alarm_kind"] is None

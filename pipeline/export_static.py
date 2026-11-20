@@ -73,6 +73,10 @@ def bin_mode(times, codes, t0, t1, n_states: int, bins=BINS) -> np.ndarray:
     return modes
 
 
+def hours_between(earlier: pd.Timestamp, later: pd.Timestamp) -> float:
+    return (later - earlier) / pd.Timedelta(hours=1)
+
+
 def compact(values) -> list:
     """Round to SIGNIFICANT_DIGITS and turn NaN into null, to keep the JSON small and valid."""
     return [
@@ -133,8 +137,13 @@ def export_mission(mission: int, mission_dir: Path, out: Path) -> dict:
                 "name": channel,
                 "subsystem": str(subsystem_of.get(channel, "unknown")),
                 "status": info.get("status", "no_file"),
+                # the alarm is stored as hours from the event start; the plot measures from t0
+                "alarm_h": number(info.get("alarm_h") + hours_between(t0, targets.at[eid, "start"]))
+                if pd.notna(info.get("alarm_h"))
+                else None,
+                "alarm_kind": json_value(info.get("alarm_kind")),
                 "labelled_h": [
-                    [round((s - t0) / pd.Timedelta(hours=1), 4), round((e - t0) / pd.Timedelta(hours=1), 4)]
+                    [round(hours_between(t0, s), 4), round(hours_between(t0, e), 4)]
                     for s, e in zip(pieces["start"], pieces["end"], strict=True)
                 ],
             }
@@ -174,10 +183,7 @@ def export_mission(mission: int, mission_dir: Path, out: Path) -> dict:
             "t0": t0.isoformat() + "Z",
             "t1": t1.isoformat() + "Z",
             "bins": BINS,
-            "event_h": [
-                round((row["start"] - t0) / pd.Timedelta(hours=1), 4),
-                round((row["end"] - t0) / pd.Timedelta(hours=1), 4),
-            ],
+            "event_h": [round(hours_between(t0, row["start"]), 4), round(hours_between(t0, row["end"]), 4)],
             "channels": traces[eid],
         }
         (out / "signals" / f"{eid}.json").write_text(json.dumps(payload, separators=(",", ":")))
@@ -193,6 +199,8 @@ def export_mission(mission: int, mission_dir: Path, out: Path) -> dict:
         "lvr_absmax",
         "frozen_delta_median",
         "state_shift_median",
+        "n_channels_alarmed",
+        "first_alarm_h",
         "feature_status",
         "long_event",
     ]
@@ -236,8 +244,11 @@ def main() -> None:
     out = config.STATIC_API
     if not out.resolve().is_relative_to(config.ROOT):
         raise SystemExit(f"Refusing to write outside the repo: {out}")
-    if out.exists():
-        shutil.rmtree(out)  # start clean so no stale event files survive a re-run
+    # Remove only this script's own outputs, so no stale event file survives a re-run while
+    # files written by other steps (results.json from pipeline.evaluate) are kept.
+    shutil.rmtree(out / "signals", ignore_errors=True)
+    for old in [out / "meta.json", *out.glob("events-m*.json")]:
+        old.unlink(missing_ok=True)
     (out / "signals").mkdir(parents=True)
 
     started = time.perf_counter()

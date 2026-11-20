@@ -15,6 +15,13 @@ Categorical channels (each sample is a state label, so variance has no meaning):
 Both kinds:
   frozen_delta  = share of repeated values in the window minus the same share in the baseline,
                   so a channel that always repeats values (coarse quantisation) scores near 0
+
+Channel alarm (display only, used to sort channels by "earliest move" in the app; it is not one of
+the event detectors that are evaluated):
+  spike   first window sample more than ALARM_SIGMAS baseline standard deviations from the baseline mean
+  freeze  the moment a run of identical values in the window becomes longer than any run in the baseline
+  state   (categorical) first window sample whose state differs from the baseline's most common state
+  alarm_h = hours from the event's start to the earliest of these
 """
 
 from __future__ import annotations
@@ -36,6 +43,7 @@ MIN_BASELINE_SAMPLES = 20
 GAP_FACTOR = 5.0  # neighbouring samples further apart than 5x the usual spacing are a data gap
 VAR_FLOOR_REL = 1e-3  # variance floor = (0.001 x the channel's overall std) squared
 LONG_EVENT_H = 168.0  # events longer than a week are kept but flagged
+ALARM_SIGMAS = 4.0  # spike alarm threshold, in baseline standard deviations
 TRUE_WORDS = {"1", "true", "yes", "y", "t"}
 
 
@@ -75,6 +83,51 @@ def state_shift(window_codes: np.ndarray, baseline_codes: np.ndarray, n_states: 
     return float(0.5 * np.abs(p_window - p_baseline).sum())
 
 
+def identical_runs(times: pd.DatetimeIndex, values: np.ndarray, max_step: pd.Timedelta):
+    """Start index and length of every run of identical values; a data gap ends a run."""
+    if len(values) == 0:
+        return np.array([], dtype=np.int64), np.array([], dtype=np.int64)
+    same = (values[1:] == values[:-1]) & (np.diff(times.as_unit("ns").asi8) <= max_step.value)
+    breaks = np.flatnonzero(~same) + 1
+    starts = np.concatenate([[0], breaks])
+    ends = np.concatenate([breaks, [len(values)]])
+    return starts, ends - starts
+
+
+def channel_alarm(
+    w_times: pd.DatetimeIndex,
+    w_values: np.ndarray,
+    b_times: pd.DatetimeIndex,
+    b_values: np.ndarray,
+    categorical: bool,
+    min_sigma: float,
+    max_step: pd.Timedelta,
+    event_start: pd.Timestamp,
+) -> tuple[float | None, str | None]:
+    """(hours from event start to the first alarm, alarm kind), or (None, None) if it never alarms."""
+    candidates = []  # (index into the window, kind)
+    if categorical:
+        usual = np.bincount(b_values).argmax()
+        changed = np.flatnonzero(w_values != usual)
+        if len(changed):
+            candidates.append((changed[0], "state"))
+    else:
+        limit = ALARM_SIGMAS * max(float(b_values.std()), min_sigma)
+        far = np.flatnonzero(np.abs(w_values - b_values.mean()) > limit)
+        if len(far):
+            candidates.append((far[0], "spike"))
+        _, b_lengths = identical_runs(b_times, b_values, max_step)
+        longest = int(b_lengths.max()) if len(b_lengths) else 1
+        w_starts, w_lengths = identical_runs(w_times, w_values, max_step)
+        frozen = w_starts[w_lengths > longest]
+        if len(frozen):
+            candidates.append((int(frozen[0]) + longest, "freeze"))  # the sample that breaks the record
+    if not candidates:
+        return None, None
+    index, kind = min(candidates)
+    return (w_times[index] - event_start) / pd.Timedelta(hours=1), kind
+
+
 def channel_event_features(
     series: pd.Series,
     masked: np.ndarray,
@@ -112,11 +165,16 @@ def channel_event_features(
 
     frozen_w = frozen_share(w_times, w_values, max_step)
     frozen_b = frozen_share(b_times, b_values, max_step)
+    alarm_h, alarm_kind = channel_alarm(
+        w_times, w_values, b_times, b_values, categorical, np.sqrt(floor), max_step, baseline_end
+    )
     out |= {
         "status": "ok",
         "frozen_window": frozen_w,
         "frozen_baseline": frozen_b,
         "frozen_delta": frozen_w - frozen_b,
+        "alarm_h": alarm_h,
+        "alarm_kind": alarm_kind,
     }
     if categorical:
         return out | {"state_shift": state_shift(w_values, b_values, len(series.cat.categories))}
@@ -225,12 +283,14 @@ def summarise_events(events: pd.DataFrame, channel_features: pd.DataFrame) -> pd
         "lvr_absmax",
         "frozen_delta_median",
         "state_shift_median",
+        "n_channels_alarmed",
+        "first_alarm_h",
     ]
     if channel_features.empty or "frozen_delta" not in channel_features.columns:
         summary = pd.DataFrame(columns=columns)
     else:
         ok = channel_features[channel_features["status"] == "ok"].reindex(
-            columns=["id", "channel", "kind", "log_var_ratio", "frozen_delta", "state_shift"]
+            columns=["id", "channel", "kind", "log_var_ratio", "frozen_delta", "state_shift", "alarm_h"]
         )
         summary = ok.groupby("id").agg(
             n_channels_read=("channel", "size"),
@@ -239,9 +299,11 @@ def summarise_events(events: pd.DataFrame, channel_features: pd.DataFrame) -> pd
             lvr_absmax=("log_var_ratio", lambda s: float(s.abs().max())),
             frozen_delta_median=("frozen_delta", "median"),
             state_shift_median=("state_shift", "median"),
+            n_channels_alarmed=("alarm_h", "count"),
+            first_alarm_h=("alarm_h", "min"),
         )
     out = events.merge(summary, left_on="id", right_index=True, how="left")
-    for column in ("n_channels_read", "n_categorical_read"):
+    for column in ("n_channels_read", "n_categorical_read", "n_channels_alarmed"):
         out[column] = out[column].fillna(0).astype(int)
     target = out["category"].isin(TARGET_CATEGORIES)
     out["feature_status"] = np.where(

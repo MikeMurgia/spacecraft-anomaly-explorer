@@ -1,0 +1,16 @@
+setting,detector,roc_auc,roc_auc_lo,roc_auc_hi,pr_auc,pr_auc_lo,pr_auc_hi,status
+Mission 1,A Looks dramatic,0.5433,0.458,0.6294,0.5964,0.5418,0.6872,ok
+Mission 1,B Looks stuck,0.361,0.2829,0.4455,0.5106,0.4688,0.5842,ok
+Mission 1,C Touches few channels,0.6795,0.5949,0.7626,0.7046,0.643,0.7809,ok
+Mission 1,D Library: logistic regression,0.8017,0.7354,0.8626,0.8672,0.8105,0.9153,ok
+Mission 1,mine My detector,,,,,,,not_implemented
+Mission 2,A Looks dramatic,0.2382,0.1293,0.3602,0.1289,0.0297,0.252,ok
+Mission 2,B Looks stuck,0.4484,0.3154,0.5872,0.106,0.0492,0.2414,ok
+Mission 2,C Touches few channels,0.9474,0.9103,0.9779,0.6674,0.53,0.8056,ok
+Mission 2,D Library: logistic regression,0.9683,0.938,0.9888,0.7463,0.6158,0.8716,ok
+Mission 2,mine My detector,,,,,,,not_implemented
+Mission 2 -> 1,A Looks dramatic,0.5433,0.4574,0.6287,0.5964,0.5405,0.6817,ok
+Mission 2 -> 1,B Looks stuck,0.361,0.284,0.4427,0.5106,0.4672,0.5844,ok
+Mission 2 -> 1,C Touches few channels,0.6795,0.5964,0.7615,0.7046,0.6436,0.7762,ok
+Mission 2 -> 1,D Library: logistic regression,0.6514,0.5665,0.7338,0.6511,0.5888,0.7407,ok
+Mission 2 -> 1,mine My detector,,,,,,,not_implemented
