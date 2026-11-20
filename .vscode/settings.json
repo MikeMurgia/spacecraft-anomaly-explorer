@@ -7,5 +7,7 @@
     "editor.codeActionsOnSave": { "source.organizeImports": "explicit" }
   },
   "files.eol": "\n",
-  "files.insertFinalNewline": true
+  "files.insertFinalNewline": true,
+  "files.watcherExclude": { "**/data/raw/**": true },
+  "search.exclude": { "**/data/raw/**": true }
 }

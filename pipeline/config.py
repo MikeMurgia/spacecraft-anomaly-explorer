@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+DATA_RAW = ROOT / "data" / "raw"  # default home of the ESA-ADB download (git-ignored)
 DATA_PROCESSED = ROOT / "data" / "processed"
 STATIC_API = ROOT / "frontend" / "api"
 
@@ -20,15 +21,13 @@ SEED = 20261117  # one fixed seed for every random step (CV folds, bootstrap, ji
 def esa_root() -> Path:
     """Folder that holds ESA-Mission1, ESA-Mission2 and ESA-Mission3.
 
-    Read from the ESA_ROOT environment variable so the raw data can live anywhere
-    outside the repo.
+    Uses data/raw/ inside the repo by default. Set the ESA_ROOT environment variable
+    to use a copy stored somewhere else instead.
     """
     value = os.environ.get("ESA_ROOT")
-    if not value:
-        raise RuntimeError(
-            "Set ESA_ROOT to the folder that contains ESA-Mission1, ESA-Mission2 and ESA-Mission3."
-        )
-    path = Path(value).expanduser().resolve()
+    path = Path(value).expanduser().resolve() if value else DATA_RAW
     if not path.is_dir():
-        raise RuntimeError(f"ESA_ROOT does not exist or is not a folder: {path}")
+        raise RuntimeError(
+            f"ESA-ADB data not found at {path}. Put ESA-Mission1..3 in data/raw/ or set ESA_ROOT."
+        )
     return path
