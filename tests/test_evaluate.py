@@ -93,7 +93,7 @@ def test_run_scores_missions_transfer_and_skips_the_stub(quick):
     m2 = results["missions"]["2"]
     assert m2["scored"] and not results["missions"]["3"]["scored"]  # 8 anomalies: descriptive only
     assert m2["detectors"]["C"]["roc_auc"] > 0.9  # fewer channels really does mark anomalies here
-    assert m2["detectors"]["mine"] == {"status": "not_implemented"}
+    assert m2["detectors"]["conformal"] == {"status": "not_implemented"}
     assert "cv_roc_auc_range" in m2["detectors"]["D"]  # a fitted model varies between repeats
     assert "cv_roc_auc_range" not in m2["detectors"]["C"]  # a fixed rule does not
     assert len(m2["detectors"]["A"]["scores"]) == 231

@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 
 from pipeline.detectors import all_detectors
-from pipeline.detectors.baselines import LibraryLogistic, RuleDetector
-from pipeline.detectors.mine import MyDetector
+from pipeline.detectors.baselines import TELEMETRY_INPUTS, LibraryLogistic, RuleDetector
+from pipeline.detectors.conformal_rare_event import ConformalRareEventDetector
 from pipeline.evaluate import MODEL_INPUTS
 
 X = pd.DataFrame({"lvr_median": [-3.0, 0.5, 2.0]})
@@ -21,18 +21,29 @@ def test_library_logistic_learns_a_separable_pattern():
     y = np.array([1] * 20 + [0] * 80)
     features = pd.DataFrame(rng.normal(0, 1, (100, len(MODEL_INPUTS))), columns=MODEL_INPUTS)
     features["log_n_channels"] -= 3 * y  # anomalies touch fewer channels
-    scores = LibraryLogistic().fit(features, y).score(features)
+    scores = LibraryLogistic("D", "D", "D").fit(features, y).score(features)
     assert scores.shape == (100,)
     assert ((scores >= 0) & (scores <= 1)).all()
     assert scores[y == 1].mean() > scores[y == 0].mean()
 
 
-def test_my_detector_is_a_stub_until_phase_3():
+def test_conformal_detector_is_a_stub_until_phase_3():
+    # Replace this test with real ones once fit() and score() are written.
     with pytest.raises(NotImplementedError):
-        MyDetector().fit(X, np.array([0, 1, 0]))
+        ConformalRareEventDetector().fit(X, np.array([0, 1, 0]))
 
 
-def test_detector_keys_are_unique_and_include_mine():
+def test_detector_keys_are_unique_and_include_the_conformal_detector():
     keys = [d.key for d in all_detectors()]
     assert len(keys) == len(set(keys))
-    assert keys[-1] == "mine"
+    assert keys[-1] == "conformal"
+
+
+def test_telemetry_only_variant_ignores_label_geometry():
+    rng = np.random.default_rng(1)
+    y = np.array([1] * 20 + [0] * 80)
+    features = pd.DataFrame(rng.normal(0, 1, (100, len(MODEL_INPUTS))), columns=MODEL_INPUTS)
+    model = LibraryLogistic("Dt", "Dt", "Dt", columns=TELEMETRY_INPUTS).fit(features, y)
+    changed = features.copy()
+    changed[["log_n_channels", "n_subsystems", "log_covered_h"]] = 99.0  # annotator-derived inputs
+    np.testing.assert_allclose(model.score(features), model.score(changed))

@@ -91,8 +91,8 @@ Agency. https://doi.org/10.5281/zenodo.15237121. Licensed CC BY 3.0 IGO.
 ## AI usage
 
 This project was built with help from an AI assistant (Claude). What it did and what I did is logged
-session by session in [docs/AI_USAGE.md](docs/AI_USAGE.md). The anomaly detector in
-`pipeline/detectors/mine.py` is my own work.
+session by session in [docs/AI_USAGE.md](docs/AI_USAGE.md). The logic of the conformal rare-event
+detector in `pipeline/detectors/conformal_rare_event.py` is my own work.
 
 ## Licence
 

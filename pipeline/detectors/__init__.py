@@ -2,7 +2,7 @@
 
 Every detector follows the same small interface so the evaluation harness can treat them alike:
 
-    detector.key          short id used in results.json and the app ("A", "B", "C", "D", "mine")
+    detector.key          short id used in results.json and the app ("A", "B", "C", "D", "Dt", "conformal")
     detector.label        name shown in the app
     detector.description  one sentence on what the score means
     detector.learns       True if fit() learns from the training labels (rules learn nothing)
@@ -35,6 +35,6 @@ class Detector(Protocol):
 def all_detectors() -> list[Detector]:
     """The baselines, plus my own detector (skipped by the harness until it is implemented)."""
     from pipeline.detectors.baselines import baselines
-    from pipeline.detectors.mine import MyDetector
+    from pipeline.detectors.conformal_rare_event import ConformalRareEventDetector
 
-    return [*baselines(), MyDetector()]
+    return [*baselines(), ConformalRareEventDetector()]

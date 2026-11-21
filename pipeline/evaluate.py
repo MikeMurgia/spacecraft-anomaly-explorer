@@ -310,11 +310,11 @@ def print_table(table: pd.DataFrame, results: dict) -> None:
         print(f"\n{setting}  (PR no-skill = {prevalence:.3f}, ROC no-skill = 0.500)")
         for _, r in rows.iterrows():
             if r["status"] != "ok":
-                print(f"  {r['detector']:<34} {r['status']}")
+                print(f"  {r['detector']:<42} {r['status']}")
                 continue
             roc = f"{r['roc_auc']:.3f} [{r['roc_auc_lo']:.3f}, {r['roc_auc_hi']:.3f}]"
             pr = f"{r['pr_auc']:.3f} [{r['pr_auc_lo']:.3f}, {r['pr_auc_hi']:.3f}]"
-            print(f"  {r['detector']:<34} ROC-AUC {roc}   PR-AUC {pr}")
+            print(f"  {r['detector']:<42} ROC-AUC {roc}   PR-AUC {pr}")
 
 
 def main() -> None:
