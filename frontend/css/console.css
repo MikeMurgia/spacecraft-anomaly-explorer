@@ -18,8 +18,9 @@
   --muted: #a3b4cc;
   --cyan: #3dd6e8;
   --cyan-soft: rgba(61, 214, 232, 0.45);
-  --anomaly: #ff8a57;
-  --rare: #6a93be;
+  --anomaly: #e06d3a; /* marks; checked with the dataviz validator against the panel surface */
+  --rare: #5a8ed2;
+  --anomaly-text: #ff8a57; /* lighter versions for text on the dark glass */
   --rare-text: #8fb3d9;
   --alarm: #f2c14e;
   --red: #ff5a5a;
@@ -97,7 +98,7 @@ button { font: inherit; color: inherit; }
 .monitor > .glass {
   /* bezel (12 px, drawn by the inset shadows) + 12 px of glass margin; the wide side leaves room for the monitor tab */
   height: 100%; border-radius: 14px; padding: 24px 74px 22px 28px; position: relative;
-  display: grid; grid-template-rows: 52px minmax(0, 0.94fr) minmax(0, 1fr) 32px; gap: 12px;
+  display: grid; grid-template-rows: 52px minmax(0, 0.94fr) minmax(0, 1fr) 32px; grid-template-columns: minmax(0, 1fr); gap: 12px;
   box-shadow: inset 0 1px 0 #6a7fa3, inset 0 0 0 1px #3a4a66, inset 0 0 0 11px #1e2738, inset 0 0 0 12px #070a10,
     0 14px 36px rgba(0, 0, 0, 0.6), 0 0 0 1px #070a10;
 }
@@ -138,7 +139,7 @@ button { font: inherit; color: inherit; }
 .icon-button svg { width: 18px; height: 18px; fill: none; stroke: var(--cyan); stroke-width: 2; }
 
 /* ---------- rows and panels ---------- */
-.row { display: flex; gap: 14px; min-height: 0; }
+.row { display: flex; gap: 14px; min-height: 0; min-width: 0; }
 .panel {
   position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; min-height: 0; overflow: hidden;
   flex: none; padding: 10px 14px 9px; border: 1px solid rgba(61, 214, 232, 0.48); border-radius: 6px;
@@ -160,8 +161,8 @@ button { font: inherit; color: inherit; }
 .panel-head .letter::after { content: " ·"; color: var(--muted); }
 .panel-head .sub { margin: 0; font: 400 12px var(--mono); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .panel-head .tools { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-.panel-body { position: relative; flex: 1 1 auto; min-height: 0; }
-.notice { margin: 0; font: 400 13px/1.35 var(--sans); color: var(--muted); }
+.panel-body { position: relative; flex: 1 1 0; min-height: 0; }  /* basis 0: the chart never pushes its own box bigger */
+.notice { margin: 0; font: 400 12.5px/1.35 var(--sans); color: var(--muted); }
 .notice:empty { display: none; }
 .notice b { color: var(--text); font-weight: 600; }
 .empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 12px; font: 400 12px/1.5 var(--mono); color: var(--muted); }
@@ -189,14 +190,16 @@ button { font: inherit; color: inherit; }
 
 /* ---------- status bar ---------- */
 .statusbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 10px; border-top: 1px solid rgba(61, 214, 232, 0.25); background: rgba(4, 9, 18, 0.62); backdrop-filter: blur(10px); border-radius: 0 0 4px 4px; font-family: var(--mono); }
-.status-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.status-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.status-left .text-button { flex: none; white-space: nowrap; }
 #status-text { font-size: 13px; white-space: nowrap; }
-#status-text b.anomaly { color: var(--anomaly); }
-.chips { display: flex; gap: 6px; overflow: hidden; }
-.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: var(--text); background: rgba(61, 214, 232, 0.1); border: 1px solid var(--cyan-soft); border-radius: 12px; padding: 1px 4px 1px 10px; }
-.chip button { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0 4px; font-size: 13px; line-height: 1; }
+#status-text b.anomaly { color: var(--anomaly-text); }
+.chips { display: flex; gap: 6px; overflow: hidden; min-width: 0; }
+.chip { flex: 0 1 auto; min-width: 48px; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: var(--text); background: rgba(61, 214, 232, 0.1); border: 1px solid var(--cyan-soft); border-radius: 12px; padding: 1px 4px 1px 10px; }
+.chip-text { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.chip button { flex: none; background: none; border: 0; color: var(--muted); cursor: pointer; padding: 0 4px; font-size: 13px; line-height: 1; }
 .chip button:hover { color: var(--text); }
-.credit, .credit-left { margin: 0; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.credit, .credit-left { margin: 0; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
 .text-button { font: 400 12px var(--mono); color: var(--text); background: transparent; border: 1px solid var(--cyan-soft); border-radius: 4px; padding: 4px 10px; cursor: pointer; text-decoration: none; }
 .text-button:hover { background: rgba(61, 214, 232, 0.12); }
 
@@ -222,7 +225,7 @@ button { font: inherit; color: inherit; }
 .briefing-body { display: flex; flex-direction: column; gap: 8px; }
 .question { margin: 0; font: 600 25px/1.06 var(--head); }
 .lede { margin: 0; font: 400 13.5px/1.45 var(--sans); color: var(--muted); }
-.lede b.anomaly { color: var(--anomaly); }
+.lede b.anomaly { color: var(--anomaly-text); }
 .pair { flex: 1 1 auto; min-height: 0; position: relative; }
 .takeaway { margin: 0; font: 600 21px var(--head); color: var(--cyan); }
 .methods-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; align-content: start; font: 400 12px/1.4 var(--sans); color: var(--muted); overflow: hidden; }
@@ -231,7 +234,42 @@ button { font: inherit; color: inherit; }
 .methods-body ol { padding-left: 16px; }
 .methods-body .wide { grid-column: span 2; }
 
+/* ---------- legend (top bar) ---------- */
+.legend { display: flex; gap: 16px; align-items: center; font: 400 12px var(--mono); color: var(--muted); margin-right: auto; margin-left: 40px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; }
+.legend .anomaly { background: var(--anomaly); }
+.legend .rare { background: var(--rare); }
+.legend .selected { background: none; border: 2px solid var(--cyan); }
+
+/* ---------- chart text and chrome (SVG) ---------- */
+svg { display: block; overflow: visible; }
+.tick-label, .na-label { font: 400 10.5px var(--mono); fill: var(--muted); paint-order: stroke; stroke: #07101f; stroke-width: 3px; stroke-linejoin: round; }
+.na-label { text-anchor: end; fill: #6f82a0; }
+.axis-title { font: 600 13px var(--head); fill: var(--text); letter-spacing: 0.03em; cursor: help; }
+.axis-unit { font: 400 10px var(--mono); fill: #7f93b2; }
+.domain, .tick line { stroke: var(--axis); stroke-width: 1; }
+.grid .tick line { stroke: var(--grid); }
+.pc-lines path.hovered { stroke: #ffffff !important; stroke-opacity: 1 !important; stroke-width: 2 !important; }
+.pc-brush .selection, .tl-brush .selection { fill: var(--cyan); fill-opacity: 0.14; stroke: var(--cyan); stroke-width: 1; }
+.pc-brush .overlay { cursor: crosshair; }
+.strip-bg { fill: rgba(10, 22, 40, 0.8); stroke: var(--grid); }
+.dots circle.hovered { stroke: #ffffff; stroke-width: 2; }
+.col-head { font: 400 11px var(--mono); fill: var(--muted); }
+.row-label { font: 400 11.5px var(--mono); fill: var(--text); }
+.row-count { font: 400 11px var(--mono); fill: var(--muted); }
+.cell-value { font: 500 11px var(--mono); pointer-events: none; }
+.hm-row:hover .row-label, .hm-row:focus-visible .row-label { fill: var(--cyan); }
+.hm-row.chosen .row-label { fill: var(--cyan); font-weight: 600; }
+.hm-row.chosen .row-hit { fill: rgba(61, 214, 232, 0.1); }
+.hm-row:focus { outline: none; }
+.hm-row:focus-visible .row-hit { stroke: var(--cyan); }
+
 /* ---------- tooltip and errors ---------- */
+.tip-title { color: var(--muted); margin-bottom: 4px; }
+.tip-row { display: flex; align-items: center; gap: 6px; }
+.tip-row i { width: 12px; height: 2px; }
+.tip-row b { color: var(--text); font-weight: 600; }
 #tooltip { position: fixed; z-index: 100; pointer-events: none; max-width: 320px; padding: 8px 10px; font: 400 12px/1.45 var(--mono); color: var(--text); background: rgba(4, 10, 20, 0.95); border: 1px solid var(--cyan-soft); border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
 #load-error { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 200; max-width: 560px; padding: 18px 22px; font: 400 14px/1.5 var(--mono); background: #1a0b0b; border: 1px solid var(--red); border-radius: 6px; }
 .noscript { position: fixed; inset: 40% 0 auto; text-align: center; font: 400 16px var(--mono); }

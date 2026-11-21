@@ -3,13 +3,19 @@
 // function (element, ctx) -> { update(state, changed) } and redraws only what changed.
 
 import { initBackground } from "./background.js";
+import { sizeChanged } from "./chart.js";
 import { initControls } from "./controls.js";
 import { loadEvents, loadMeta, loadResults } from "./data.js";
 import { initLayout } from "./layout.js";
 import { DEFAULTS, createStore } from "./state.js";
+import { createParallelCoordinates } from "./view-a.js";
+import { createTimeline } from "./view-b.js";
+import { createHeatmap } from "./view-d.js";
 
 const VIEWS = {
-  // filled in by the next build steps, e.g. "view-a": createParallelCoordinates
+  "view-a": createParallelCoordinates,
+  "view-b": createTimeline,
+  "view-d": createHeatmap,
 };
 
 async function boot() {
@@ -26,9 +32,7 @@ async function boot() {
   };
   const views = [];
 
-  initLayout(() => {
-    for (const view of views) view.resize?.();
-  });
+  initLayout();
   ctx.background = initBackground(document.getElementById("sky"), { reducedMotion });
 
   const [meta, results] = await Promise.all([loadMeta(), loadResults()]);
@@ -48,7 +52,7 @@ async function boot() {
       ctx.events = events;
       ctx.byId = new Map(events.map((event) => [event.id, event]));
       // a new mission starts clean: its filters, time window and selection make no sense here
-      const patch = { mission, filters: {}, window: null, selected: null };
+      const patch = { mission, filters: {}, window: null, subsystem: null, selected: null };
       if (ctx.store) ctx.store.set(patch);
       else ctx.store = createStore({ ...DEFAULTS, ...patch });
     } finally {
@@ -59,9 +63,24 @@ async function boot() {
 
   initControls(ctx);
 
+  // each view redraws when its chart area is no longer the size it was drawn at: a window
+  // resize, or its footnote growing to two lines. At most once per frame.
+  let pending = false;
+  const observer = new ResizeObserver(() => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+      pending = false;
+      for (const view of views) if (sizeChanged(view.body)) view.resize?.();
+    });
+  });
   for (const panel of document.querySelectorAll(".panel[id]")) {
     const create = VIEWS[panel.id];
-    if (create) views.push(create(panel, ctx));
+    if (!create) continue;
+    const view = create(panel, ctx);
+    view.body = panel.querySelector("[data-chart]");
+    views.push(view);
+    observer.observe(view.body);
   }
   const updateViews = (state, changed) => {
     for (const view of views) view.update(state, changed);

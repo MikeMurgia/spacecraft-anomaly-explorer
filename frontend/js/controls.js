@@ -3,22 +3,14 @@
 // Each control only reads and writes the shared store; the views redraw themselves from it.
 
 import { activeEvents } from "./state.js";
+import { short } from "./chart.js";
+import { featureName } from "./features.js";
 import { duration, perMonth, shortId, utcDay, utcStamp } from "./format.js";
 
 /** The knob's detents, in false alarms per month (the same stops as the budget table). */
 export const BUDGET_STOPS = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10];
 const DIAL_SWEEP = 270; // degrees from the first detent to the last
 
-export const FEATURE_NAMES = {
-  log_n_channels: "channels",
-  n_channels: "channels",
-  span_h: "duration",
-  covered_h: "duration",
-  lvr_median: "variance ratio",
-  frozen_delta_median: "frozen Δ",
-  state_shift_median: "state shift",
-  first_alarm_h: "first alarm",
-};
 
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -94,7 +86,7 @@ export function initControls(ctx) {
     "prev-anomaly": () => stepAnomaly(-1),
     "next-anomaly": () => stepAnomaly(1),
     "zoom-event": zoomToEvent,
-    "clear-all": () => store.set({ filters: {}, window: null, selected: null }),
+    "clear-all": () => store.set({ filters: {}, window: null, subsystem: null, selected: null }),
   };
   for (const button of $$("[data-action]")) {
     button.addEventListener("click", () => actions[button.dataset.action]());
@@ -181,13 +173,16 @@ export function initControls(ctx) {
 
   function renderChips(state, selected) {
     const items = Object.entries(state.filters).map(([key, [low, high]]) => ({
-      text: `${FEATURE_NAMES[key] ?? key} ${low.toFixed(1)}–${high.toFixed(1)}`,
+      text: `${featureName(key)} ${short(low)} to ${short(high)}`,
       clear: () => {
         const filters = { ...store.get().filters };
         delete filters[key];
         store.set({ filters });
       },
     }));
+    if (state.subsystem) {
+      items.push({ text: state.subsystem.replace(/^subsystem_/, "subsystem "), clear: () => store.set({ subsystem: null }) });
+    }
     if (state.window) {
       items.push({
         text: `${utcDay(state.window[0])} → ${utcDay(state.window[1])}`,
@@ -204,7 +199,11 @@ export function initControls(ctx) {
       ...items.map(({ text, clear }) => {
         const chip = document.createElement("span");
         chip.className = "chip";
-        chip.textContent = text;
+        chip.title = text;
+        const label = document.createElement("span");
+        label.className = "chip-text";
+        label.textContent = text;
+        chip.append(label);
         const remove = document.createElement("button");
         remove.type = "button";
         remove.textContent = "×";

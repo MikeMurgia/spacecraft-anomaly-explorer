@@ -6,6 +6,7 @@ export const DEFAULTS = Object.freeze({
   monitor: 1, // 1 = explore (views A-E), 2 = analysis
   filters: {}, // feature key -> [low, high], from brushing an axis in view A
   window: null, // [start ms, end ms] from brushing the overview strip in view B, or null
+  subsystem: null, // keep only events touching this subsystem (clicking a row in view D), or null
   selected: null, // selected event id, or null
   sort: "severity", // view C channel order: "severity" (|log variance ratio|) or "onset" (earliest alarm)
   detector: "D", // detector shown in view E
@@ -45,7 +46,15 @@ export function inWindow(event, window) {
   return !window || (event.startMs >= window[0] && event.startMs <= window[1]);
 }
 
-/** The events that pass both the feature filters (view A) and the time window (view B). */
+/** True if the event touches the chosen subsystem (or no subsystem is chosen). */
+export function touchesSubsystem(event, subsystem) {
+  return !subsystem || (event.subsystems ?? []).includes(subsystem);
+}
+
+/** The events that pass the feature filters (view A), the time window (view B) and the subsystem (view D). */
 export function activeEvents(events, state) {
-  return events.filter((event) => passesFilters(event, state.filters) && inWindow(event, state.window));
+  return events.filter(
+    (event) =>
+      passesFilters(event, state.filters) && inWindow(event, state.window) && touchesSubsystem(event, state.subsystem),
+  );
 }
