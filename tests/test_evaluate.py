@@ -111,3 +111,14 @@ def test_main_writes_results_files(quick, tmp_path, monkeypatch):
     assert results["missions"]["2"]["detectors"]["B"]["status"] == "ok"
     table = pd.read_csv(tmp_path / "results_summary.csv")
     assert set(table["detector"].str[0]) >= {"A", "B", "C", "D"}
+
+
+def test_main_reports_when_no_mission_can_be_scored(quick, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(config, "DATA_PROCESSED", tmp_path)
+    monkeypatch.setattr(config, "STATIC_API", tmp_path / "api")
+    fake_events(3, anomalies=8, rare=25, seed=5).to_csv(tmp_path / "events_m3.csv", index=False)
+
+    evaluate.main()
+
+    assert "nothing was scored" in capsys.readouterr().out
+    assert json.loads((tmp_path / "api" / "results.json").read_text())["missions"]["3"]["scored"] is False

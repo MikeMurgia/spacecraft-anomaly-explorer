@@ -59,8 +59,9 @@ def interval_mask(index: pd.DatetimeIndex, starts, ends) -> np.ndarray:
     """True for every timestamp inside at least one [start, end] interval."""
     mask_delta = np.zeros(len(index) + 1, dtype=np.int64)
     if len(starts):
-        lo = index.searchsorted(pd.DatetimeIndex(starts), side="left")
-        hi = index.searchsorted(pd.DatetimeIndex(ends), side="right")
+        index = index.as_unit("ns")  # same resolution on both sides of the comparison
+        lo = index.searchsorted(pd.DatetimeIndex(starts).as_unit("ns"), side="left")
+        hi = index.searchsorted(pd.DatetimeIndex(ends).as_unit("ns"), side="right")
         np.add.at(mask_delta, lo, 1)
         np.add.at(mask_delta, hi, -1)
     return np.cumsum(mask_delta[:-1]) > 0

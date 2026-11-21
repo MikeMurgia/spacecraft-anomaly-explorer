@@ -28,6 +28,14 @@ def test_interval_mask_marks_inside_points_only():
     assert mask.nonzero()[0].tolist() == [2, 3, 6, 7]
 
 
+def test_interval_mask_accepts_times_finer_than_the_index():
+    # a microsecond index with a label end that is not a whole microsecond used to raise ValueError
+    index = minutes(10).as_unit("us")
+    end = pd.DatetimeIndex([index[4] + pd.Timedelta(nanoseconds=500)]).as_unit("ns")
+    mask = interval_mask(index, pd.DatetimeIndex([index[2]]), end)
+    assert mask.nonzero()[0].tolist() == [2, 3, 4]
+
+
 def test_frozen_share_skips_pairs_across_a_gap():
     times = pd.DatetimeIndex([T0, T0 + MINUTE, T0 + 2 * MINUTE, T0 + 60 * MINUTE])
     values = np.array([1.0, 1.0, 2.0, 2.0])

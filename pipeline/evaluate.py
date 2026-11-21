@@ -300,6 +300,9 @@ def summary_table(results: dict) -> pd.DataFrame:
 
 
 def print_table(table: pd.DataFrame, results: dict) -> None:
+    if table.empty:
+        print(f"\nNo mission has at least {MIN_ANOMALIES_TO_SCORE} anomalies, so nothing was scored")
+        return
     for setting, rows in table.groupby("setting", sort=False):
         mission = setting.split()[-1]
         prevalence = (

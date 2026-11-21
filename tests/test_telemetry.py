@@ -24,6 +24,7 @@ def test_load_channel_reads_zipped_pickle(tmp_path):
     assert series.index.is_monotonic_increasing  # sorted
     assert series.index.is_unique  # duplicate timestamp dropped
     assert series.index.tz is None  # timezone removed, still UTC
+    assert series.index.unit == "ns"  # one time resolution for every channel
     np.testing.assert_array_equal(series.to_numpy(), [1.0, 2.0, 3.0])
 
 

@@ -47,7 +47,11 @@ def _decode(name: str, raw: bytes) -> pd.DataFrame | pd.Series:
 
 
 def load_channel(path: Path) -> pd.Series:
-    """Return one channel as a float Series on a sorted, duplicate-free, timezone-free UTC index."""
+    """Return one channel on a sorted, duplicate-free, timezone-free UTC index.
+
+    Numeric channels come back as floats; channels whose values are labels come back as a
+    pandas Categorical (one category per state).
+    """
     if path.suffix.lower() == ".zip":
         with zipfile.ZipFile(path) as archive:
             names = [n for n in archive.namelist() if not n.endswith("/")]
@@ -66,6 +70,9 @@ def load_channel(path: Path) -> pd.Series:
     index = pd.DatetimeIndex(table.index)
     if index.tz is not None:
         index = index.tz_convert("UTC").tz_localize(None)
+    # one time resolution everywhere: pandas 3 may read seconds or microseconds, and comparing
+    # those with nanosecond label times fails when a label time is not a whole microsecond
+    index = index.as_unit("ns")
 
     numeric = table.select_dtypes("number")
     if not numeric.empty:

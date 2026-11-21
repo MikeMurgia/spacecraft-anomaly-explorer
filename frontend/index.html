@@ -4,23 +4,239 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Spacecraft Anomaly Explorer</title>
+  <meta name="description" content="When a spacecraft signal looks unusual, is it actually a fault? An interactive explorer of ESA-ADB anomalies and rare events.">
   <link rel="icon" href="data:,">
-  <style>
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #03070f; color: #e4ecf7;
-           font: 16px/1.5 system-ui, sans-serif; }
-    main { max-width: 44rem; padding: 2rem; }
-    h1 { letter-spacing: 0.12em; font-weight: 600; }
-    p { color: #a3b4cc; }
-    a { color: #3dd6e8; }
-  </style>
+  <link rel="stylesheet" href="css/console.css">
+  <script src="js/vendor/d3.min.js" defer></script>
+  <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <main>
-    <h1>SPACECRAFT ANOMALY EXPLORER</h1>
-    <p>Console under construction. This placeholder confirms that the GitHub Pages deploy works.</p>
-    <p>Data: De Canio, G., Kotowski, K., &amp; Haskamp, C. (2025). ESA Anomalies Dataset (ESA-ADB).
-      European Space Agency. <a href="https://doi.org/10.5281/zenodo.15237121">doi:10.5281/zenodo.15237121</a>.
-      Licensed CC BY 3.0 IGO.</p>
-  </main>
+  <a class="skip-link" href="#monitor-1">Skip to the console</a>
+
+  <div id="stage">
+    <canvas id="sky" aria-hidden="true"></canvas>
+
+    <div id="console">
+      <!-- Cockpit structure around the screens: decoration only -->
+      <div class="cockpit" aria-hidden="true">
+        <div class="ceiling"><span class="led-strip"></span><span class="lamp lamp-left"></span><span class="lamp lamp-right"></span></div>
+        <div class="pillar pillar-left"></div>
+        <div class="pillar pillar-right"></div>
+        <div class="deck">
+          <div class="deck-group">
+            <span class="plate">PWR BUS</span>
+            <span class="toggles"><i></i><i class="up"></i><i></i><i class="up"></i><i></i><i></i></span>
+            <span class="leds"><i class="ok"></i><i class="ok"></i><i class="warn"></i><i class="ok"></i><i class="bad"></i></span>
+          </div>
+          <div class="deck-group">
+            <span class="gauge"><i style="--needle: -40deg"></i></span>
+            <span class="gauge"><i style="--needle: 25deg"></i></span>
+          </div>
+          <div class="deck-group"><span class="plate wide" id="deck-label">OPS CONSOLE · 1</span></div>
+          <div class="deck-group"><span class="plate">NAV</span><span class="readout">ALT 412 km</span></div>
+          <div class="deck-group">
+            <span class="plate">COMMS</span>
+            <span class="keypad"><i></i><i></i><i class="lit"></i><i></i><i></i><i></i><i></i><i class="lit"></i><i></i><i></i><i></i><i></i></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewport">
+        <div class="track" id="track">
+
+          <!-- ============================== MONITOR 1: EXPLORE ============================== -->
+          <section class="monitor" id="monitor-1" aria-label="Monitor 1: explore the events" tabindex="-1">
+            <div class="glass">
+              <header class="topbar">
+                <div class="brand">
+                  <svg class="emblem" viewBox="0 0 38 38" aria-hidden="true"><circle cx="19" cy="19" r="17" class="ring"/><circle cx="19" cy="19" r="5" class="core"/><ellipse cx="19" cy="19" rx="16" ry="6" class="orbit" transform="rotate(-28 19 19)"/><circle cx="32" cy="12" r="2" class="moon"/></svg>
+                  <div>
+                    <h1>SPACECRAFT ANOMALY EXPLORER</h1>
+                    <p class="mode">MONITOR 1 / 2 · EXPLORE</p>
+                  </div>
+                </div>
+                <div class="topbar-right">
+                  <div class="mission-switch" role="group" aria-label="Mission">
+                    <span class="label">MISSION</span>
+                    <button type="button" class="toggle" data-mission="1" aria-pressed="false"><span class="track-pill"><span class="knob"></span></span>M1</button>
+                    <button type="button" class="toggle" data-mission="2" aria-pressed="true"><span class="track-pill"><span class="knob"></span></span>M2</button>
+                    <button type="button" class="toggle" data-mission="3" aria-pressed="false"><span class="track-pill"><span class="knob"></span></span>M3</button>
+                  </div>
+                  <div class="clock" aria-live="polite">
+                    <span class="label">SELECTED EVENT · DATASET TIME</span>
+                    <span class="value" id="clock-value">none selected</span>
+                  </div>
+                  <button type="button" class="icon-button" id="fullscreen" aria-label="Full screen" title="Full screen (best at 16:9)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+                  </button>
+                </div>
+              </header>
+
+              <div class="row row-1">
+                <section class="panel" id="view-a" aria-labelledby="view-a-title" style="width: 500px">
+                  <header class="panel-head">
+                    <h2 id="view-a-title"><span class="letter">A</span> Event Features</h2>
+                    <p class="sub">drag an axis to filter</p>
+                  </header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+                <section class="panel grow" id="view-b" aria-labelledby="view-b-title">
+                  <header class="panel-head">
+                    <h2 id="view-b-title"><span class="letter">B</span> Event Timeline</h2>
+                    <p class="sub">brush the strip · click a dot</p>
+                  </header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+                <section class="panel" id="view-d" aria-labelledby="view-d-title" style="width: 440px">
+                  <header class="panel-head">
+                    <h2 id="view-d-title"><span class="letter">D</span> Subsystem Heatmap</h2>
+                    <p class="sub">share of events</p>
+                  </header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+              </div>
+
+              <div class="row row-2">
+                <section class="panel" id="view-c" aria-labelledby="view-c-title" style="width: 730px">
+                  <header class="panel-head">
+                    <h2 id="view-c-title"><span class="letter">C</span> Linked Channels</h2>
+                    <p class="sub" id="view-c-sub">select an event</p>
+                  </header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+
+                <section class="panel pod" aria-label="Console controls" style="width: 170px">
+                  <p class="pod-title">CONTROLS</p>
+                  <label class="knob-control">
+                    <span class="dial" aria-hidden="true">
+                      <svg viewBox="0 0 132 132"><g class="ticks"></g><circle cx="66" cy="66" r="44" class="outer"/><circle cx="66" cy="66" r="36" class="inner"/><line x1="66" y1="66" x2="66" y2="36" class="pointer"/><circle cx="66" cy="66" r="5" class="hub"/></svg>
+                    </span>
+                    <span class="knob-label">ALARM BUDGET</span>
+                    <output class="knob-value" id="budget-value" for="budget">—</output>
+                    <input type="range" id="budget" min="0" max="7" step="1" value="4" aria-label="Alarm budget: false alarms per month">
+                  </label>
+                  <div class="pod-buttons">
+                    <button type="button" class="push cyan" data-action="prev-anomaly">◀ PREV<br>ANOMALY</button>
+                    <button type="button" class="push cyan" data-action="next-anomaly">NEXT ▶<br>ANOMALY</button>
+                    <button type="button" class="push amber" data-action="zoom-event">ZOOM TO<br>EVENT</button>
+                    <button type="button" class="push red" data-action="clear-all">CLEAR<br>ALL</button>
+                  </div>
+                </section>
+
+                <section class="panel grow" id="view-e" aria-labelledby="view-e-title">
+                  <header class="panel-head">
+                    <h2 id="view-e-title"><span class="letter">E</span> Alarm Budget</h2>
+                    <p class="sub">cost of each alarm</p>
+                  </header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+              </div>
+
+              <footer class="statusbar">
+                <div class="status-left">
+                  <span id="status-text" aria-live="polite">loading…</span>
+                  <span id="chips" class="chips"></span>
+                  <button type="button" class="text-button" data-action="clear-all">Clear all</button>
+                </div>
+                <p class="credit">Data: ESA-ADB · De Canio, Kotowski &amp; Haskamp (2025) · <a href="https://doi.org/10.5281/zenodo.15237121">doi:10.5281/zenodo.15237121</a> · CC BY 3.0 IGO</p>
+              </footer>
+            </div>
+            <button type="button" class="monitor-tab right" data-goto="2" aria-label="Go to monitor 2: detectors, missions, methods">
+              <svg viewBox="0 0 20 24" aria-hidden="true"><path d="M6 4 L14 12 L6 20"/></svg>
+              <span>MONITOR 2 · DETECTORS · MISSIONS · METHODS</span>
+              <svg viewBox="0 0 20 24" aria-hidden="true"><path d="M6 4 L14 12 L6 20"/></svg>
+            </button>
+          </section>
+
+          <!-- ============================== MONITOR 2: ANALYSIS ============================== -->
+          <section class="monitor" id="monitor-2" aria-label="Monitor 2: analysis" tabindex="-1">
+            <div class="glass">
+              <header class="topbar">
+                <div class="brand">
+                  <svg class="emblem" viewBox="0 0 38 38" aria-hidden="true"><circle cx="19" cy="19" r="17" class="ring"/><circle cx="19" cy="19" r="5" class="core"/><ellipse cx="19" cy="19" rx="16" ry="6" class="orbit" transform="rotate(-28 19 19)"/><circle cx="32" cy="12" r="2" class="moon"/></svg>
+                  <div>
+                    <h1>SPACECRAFT ANOMALY EXPLORER</h1>
+                    <p class="mode">MONITOR 2 / 2 · ANALYSIS</p>
+                  </div>
+                </div>
+                <div class="topbar-right">
+                  <div class="mission-switch" role="group" aria-label="Mission">
+                    <span class="label">MISSION</span>
+                    <button type="button" class="toggle" data-mission="1" aria-pressed="false"><span class="track-pill"><span class="knob"></span></span>M1</button>
+                    <button type="button" class="toggle" data-mission="2" aria-pressed="true"><span class="track-pill"><span class="knob"></span></span>M2</button>
+                    <button type="button" class="toggle" data-mission="3" aria-pressed="false"><span class="track-pill"><span class="knob"></span></span>M3</button>
+                  </div>
+                </div>
+              </header>
+
+              <div class="row row-1">
+                <section class="panel" id="briefing" aria-labelledby="briefing-title" style="width: 560px">
+                  <header class="panel-head"><h2 id="briefing-title">Briefing</h2><p class="sub">why this matters</p></header>
+                  <div class="panel-body briefing-body">
+                    <p class="question">When a spacecraft signal looks unusual, is it actually a fault?</p>
+                    <p class="lede" id="briefing-lede"></p>
+                    <div class="pair" data-chart></div>
+                    <p class="takeaway">The dramatic-looking event is the harmless one.</p>
+                  </div>
+                </section>
+                <section class="panel" id="curves" aria-labelledby="curves-title" style="width: 560px">
+                  <header class="panel-head"><h2 id="curves-title">Detector Curves</h2><p class="sub">event-level · 95% bands</p><div class="tools" id="metric-switch"></div></header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+                <section class="panel grow" id="scores" aria-labelledby="scores-title">
+                  <header class="panel-head"><h2 id="scores-title">Scores</h2><p class="sub">repeated CV · fixed seed</p></header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+              </div>
+
+              <div class="row row-2">
+                <section class="panel" id="missions" aria-labelledby="missions-title" style="width: 1000px">
+                  <header class="panel-head"><h2 id="missions-title">Cross-Mission Check</h2><p class="sub">same axes in every column</p></header>
+                  <div class="panel-body" data-chart></div>
+                  <p class="notice" data-notice></p>
+                </section>
+                <section class="panel grow" id="methods" aria-labelledby="methods-title">
+                  <header class="panel-head">
+                    <h2 id="methods-title">Methods &amp; Limits</h2>
+                    <div class="tools">
+                      <a class="text-button" href="https://github.com/MikeMurgia/spacecraft-anomaly-explorer">Code ↗</a>
+                      <a class="text-button" href="https://doi.org/10.5281/zenodo.15237121">Dataset ↗</a>
+                    </div>
+                  </header>
+                  <div class="panel-body methods-body">
+                    <div><h3>Data</h3><p>ESA-ADB Missions 1–3: labels, anomaly types and channel lists, plus features computed from the raw telemetry of every channel an event touches. ESA shifted all dates to start in 2000.</p></div>
+                    <div><h3>Pipeline</h3><ol><li>group label rows into events</li><li>compare each channel with its pre-event period</li><li>score events: A–D, Dt, conformal</li><li>repeated CV, bootstrap intervals</li><li>export static JSON</li></ol></div>
+                    <div class="wide"><h3>Limits</h3><p>Only 31 anomalies in Mission 2, so intervals are wide · event-level scoring, not a streaming detector · channel counts and durations come from the annotators · filtering on a feature and then scoring with it is circular · coarsely recorded channels repeat values, so "frozen share" barely moves · Mission 1 lost more anomalies than rare events to missing data.</p></div>
+                    <div class="wide"><h3>AI use</h3><p>Built with help from an AI assistant (Claude); the session log is in the repository. The conformal detector's logic is my own work.</p></div>
+                  </div>
+                </section>
+              </div>
+
+              <footer class="statusbar">
+                <p class="credit-left">Michael Murgia · CIS 4930 Data Visualization · FSU · code MIT</p>
+                <p class="credit">Data: ESA-ADB · De Canio, Kotowski &amp; Haskamp (2025) · <a href="https://doi.org/10.5281/zenodo.15237121">doi:10.5281/zenodo.15237121</a> · CC BY 3.0 IGO</p>
+              </footer>
+            </div>
+            <button type="button" class="monitor-tab left" data-goto="1" aria-label="Back to monitor 1: explore">
+              <svg viewBox="0 0 20 24" aria-hidden="true"><path d="M14 4 L6 12 L14 20"/></svg>
+              <span>MONITOR 1 · EXPLORE</span>
+              <svg viewBox="0 0 20 24" aria-hidden="true"><path d="M14 4 L6 12 L14 20"/></svg>
+            </button>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip" role="tooltip" hidden></div>
+  <div id="load-error" role="alert" hidden></div>
+  <noscript><p class="noscript">This console needs JavaScript to draw its charts.</p></noscript>
 </body>
 </html>
