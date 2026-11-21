@@ -66,8 +66,10 @@ def bin_min_max(times, values, t0, t1, bins=BINS) -> tuple[np.ndarray, np.ndarra
 def bin_mode(times, codes, t0, t1, n_states: int, bins=BINS) -> np.ndarray:
     """Most common state code per bin; -1 where a bin has no samples."""
     counts = np.zeros((bins, max(n_states, 1)), dtype=np.int64)
-    if len(codes):
-        np.add.at(counts, (bin_index(times, t0, t1, bins), codes), 1)
+    codes = np.asarray(codes)
+    valid = codes >= 0  # pandas codes a missing value as -1, which would otherwise count as the last state
+    if valid.any():
+        np.add.at(counts, (bin_index(times[valid], t0, t1, bins), codes[valid]), 1)
     modes = counts.argmax(axis=1)
     modes[counts.sum(axis=1) == 0] = -1
     return modes

@@ -265,12 +265,40 @@ svg { display: block; overflow: visible; }
 .hm-row:focus { outline: none; }
 .hm-row:focus-visible .row-hit { stroke: var(--cyan); }
 
+.panel-head .tools.segmented { margin-left: auto; flex: none; }
+.segmented button:disabled { opacity: 0.4; cursor: not-allowed; }
+.cursor { stroke: rgba(228, 236, 247, 0.45); stroke-width: 1; pointer-events: none; }
+.panel.is-loading [data-chart] { opacity: 0.45; transition: opacity 150ms; }
+
+/* view C: channel stack */
+.c-wrap { display: flex; flex-direction: column; height: 100%; }
+.c-axis { flex: none; }
+.c-rows { flex: none; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #2f4568 transparent; overscroll-behavior: contain; }
+.event-band { fill: rgba(61, 214, 232, 0.08); }
+.first-alarm { stroke: var(--alarm); stroke-opacity: 0.45; stroke-width: 1; }
+.alarm-tick { stroke: var(--alarm); stroke-width: 1.5; }
+.alarm-label { font: 500 10.5px var(--mono); fill: var(--alarm); }
+.c-name { font: 500 12px var(--mono); fill: var(--text); }
+.c-detail { font: 400 10px var(--mono); fill: var(--muted); }
+.c-range { font: 400 10px var(--mono); fill: #7f93b2; }
+.row-rule { stroke: var(--grid); }
+.zero { stroke: #2a3c5c; }
+.clip { fill: #ffffff; fill-opacity: 0.8; }
+
+/* view E: alarm budget */
+.budget-zone { fill: rgba(242, 193, 78, 0.05); }
+.budget-line { stroke: var(--alarm); stroke-width: 1.5; }
+.budget-label { font: 500 10.5px var(--mono); fill: var(--alarm); }
+.mark-label { font: 400 11px var(--mono); fill: var(--muted); paint-order: stroke; stroke: #07101f; stroke-width: 3px; }
+.mark-label.chosen { fill: var(--cyan); font-weight: 600; }
+
 /* ---------- tooltip and errors ---------- */
 .tip-title { color: var(--muted); margin-bottom: 4px; }
-.tip-row { display: flex; align-items: center; gap: 6px; }
-.tip-row i { width: 12px; height: 2px; }
+.tip-row { display: flex; align-items: baseline; gap: 6px; }
+.tip-row b { white-space: nowrap; }
+.tip-row i { flex: none; width: 12px; height: 2px; align-self: center; }
 .tip-row b { color: var(--text); font-weight: 600; }
-#tooltip { position: fixed; z-index: 100; pointer-events: none; max-width: 320px; padding: 8px 10px; font: 400 12px/1.45 var(--mono); color: var(--text); background: rgba(4, 10, 20, 0.95); border: 1px solid var(--cyan-soft); border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+#tooltip { position: fixed; z-index: 100; pointer-events: none; max-width: 380px; padding: 8px 10px; font: 400 12px/1.45 var(--mono); color: var(--text); background: rgba(4, 10, 20, 0.95); border: 1px solid var(--cyan-soft); border-radius: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
 #load-error { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 200; max-width: 560px; padding: 18px 22px; font: 400 14px/1.5 var(--mono); background: #1a0b0b; border: 1px solid var(--red); border-radius: 6px; }
 .noscript { position: fixed; inset: 40% 0 auto; text-align: center; font: 400 16px var(--mono); }
 

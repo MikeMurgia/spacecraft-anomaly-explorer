@@ -1,6 +1,9 @@
 // Shared state for both monitors. Every view reads from here and changes it only through
 // store.set(), so one brush, click or button press updates every linked view at once.
 
+/** The alarm-budget knob's detents, in false alarms per month (the same stops as the budget table). */
+export const BUDGET_STOPS = Object.freeze([0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10]);
+
 export const DEFAULTS = Object.freeze({
   mission: 2, // which mission's events are shown in the explorer
   monitor: 1, // 1 = explore (views A-E), 2 = analysis

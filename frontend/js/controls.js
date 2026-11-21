@@ -2,13 +2,11 @@
 // buttons, the full-screen button, the event clock and the status bar with its filter chips.
 // Each control only reads and writes the shared store; the views redraw themselves from it.
 
-import { activeEvents } from "./state.js";
+import { BUDGET_STOPS, activeEvents } from "./state.js";
 import { short } from "./chart.js";
 import { featureName } from "./features.js";
 import { duration, perMonth, shortId, utcDay, utcStamp } from "./format.js";
 
-/** The knob's detents, in false alarms per month (the same stops as the budget table). */
-export const BUDGET_STOPS = [0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10];
 const DIAL_SWEEP = 270; // degrees from the first detent to the last
 
 

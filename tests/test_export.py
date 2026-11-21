@@ -25,6 +25,12 @@ def test_bin_mode_picks_the_most_common_state():
     assert bin_mode(times, np.array([1, 1, 0]), T0, T1, n_states=2, bins=4).tolist() == [1, -1, -1, -1]
 
 
+def test_bin_mode_ignores_missing_states():
+    # code -1 is pandas' "missing"; it must not be counted as the last state
+    times = pd.DatetimeIndex([T0, T0 + pd.Timedelta(minutes=1), T0 + pd.Timedelta(minutes=2)])
+    assert bin_mode(times, np.array([-1, -1, 0]), T0, T1, n_states=2, bins=4).tolist() == [0, -1, -1, -1]
+
+
 def test_compact_rounds_and_turns_nan_into_null():
     assert compact([1.234567, np.nan]) == [1.2346, None]
 

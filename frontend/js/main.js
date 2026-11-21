@@ -10,12 +10,16 @@ import { initLayout } from "./layout.js";
 import { DEFAULTS, createStore } from "./state.js";
 import { createParallelCoordinates } from "./view-a.js";
 import { createTimeline } from "./view-b.js";
+import { createChannelStack } from "./view-c.js";
 import { createHeatmap } from "./view-d.js";
+import { createBudget } from "./view-e.js";
 
 const VIEWS = {
   "view-a": createParallelCoordinates,
   "view-b": createTimeline,
+  "view-c": createChannelStack,
   "view-d": createHeatmap,
+  "view-e": createBudget,
 };
 
 async function boot() {
