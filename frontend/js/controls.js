@@ -134,6 +134,13 @@ export function initControls(ctx) {
   const chips = document.getElementById("chips");
   const budgetValue = document.getElementById("budget-value");
 
+  /** The off-screen monitor is inert (no tab stops); in the stacked small-screen layout both are on screen. */
+  function applyInert(state) {
+    const stacked = document.body.classList.contains("stacked");
+    monitors.forEach((monitor, i) => (monitor.inert = !stacked && i + 1 !== state.monitor));
+  }
+  window.addEventListener("sae:layout", () => applyInert(store.get()));
+
   function render(state, changed) {
     if (!changed || changed.has("mission")) {
       for (const button of $$(".toggle[data-mission]")) {
@@ -142,9 +149,10 @@ export function initControls(ctx) {
     }
     if (!changed || changed.has("monitor")) {
       track.dataset.monitor = String(state.monitor);
-      monitors.forEach((monitor, i) => (monitor.inert = i + 1 !== state.monitor));
+      applyInert(state);
       deckLabel.textContent = `OPS CONSOLE · ${state.monitor}`;
       ctx.background?.setMonitor(state.monitor);
+      ctx.earth?.setMonitor(state.monitor);
       if (changed) monitors[state.monitor - 1].focus({ preventScroll: true });
     }
     if (!changed || changed.has("budget")) {

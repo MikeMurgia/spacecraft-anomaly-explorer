@@ -42,6 +42,21 @@ def test_js_imports_exist(path):
 
 
 @pytest.mark.parametrize("path", JS_FILES, ids=lambda p: p.name)
+def test_js_dynamic_imports_exist(path):
+    for ref in re.findall(r'import\("([^"]+)"\)', path.read_text(encoding="utf-8")):
+        assert ref.startswith("./"), f"{path.name}: import({ref}) should be a relative module path"
+        assert (path.parent / ref).resolve().is_file(), f"{path.name} lazily imports missing module {ref}"
+
+
+def test_vendored_libraries_have_their_licences():
+    vendor = FRONTEND / "js" / "vendor"
+    assert (vendor / "d3.min.js").is_file() and (vendor / "LICENSE-d3.txt").is_file()
+    three = vendor / "three"
+    assert {p.name for p in three.glob("*.js")} == {"three.module.js", "three.core.js"}
+    assert (three / "LICENSE-three.txt").is_file()
+
+
+@pytest.mark.parametrize("path", JS_FILES, ids=lambda p: p.name)
 def test_js_fetches_are_relative(path):
     for ref in re.findall(r'["`](/?api/[^"`$]*)', path.read_text(encoding="utf-8")):
         assert not ref.startswith("/"), f"{path.name}: {ref} must be relative for GitHub Pages"

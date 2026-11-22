@@ -3,10 +3,14 @@
 // function (element, ctx) -> { update(state, changed) } and redraws only what changed.
 
 import { initBackground } from "./background.js";
+import { createBriefing } from "./briefing.js";
 import { sizeChanged } from "./chart.js";
 import { initControls } from "./controls.js";
+import { createCurves } from "./curves.js";
 import { loadEvents, loadMeta, loadResults } from "./data.js";
 import { initLayout } from "./layout.js";
+import { createMissionCheck } from "./missions.js";
+import { createScores } from "./scores.js";
 import { DEFAULTS, createStore } from "./state.js";
 import { createParallelCoordinates } from "./view-a.js";
 import { createTimeline } from "./view-b.js";
@@ -20,6 +24,10 @@ const VIEWS = {
   "view-c": createChannelStack,
   "view-d": createHeatmap,
   "view-e": createBudget,
+  briefing: createBriefing,
+  curves: createCurves,
+  scores: createScores,
+  missions: createMissionCheck,
 };
 
 async function boot() {
@@ -31,6 +39,7 @@ async function boot() {
     events: [],
     byId: new Map(),
     background: null,
+    earth: null,
     reducedMotion,
     switchMission: null,
   };
@@ -92,6 +101,23 @@ async function boot() {
   ctx.store.subscribe(updateViews);
   updateViews(ctx.store.get(), null);
   window.sae = ctx; // handy in the browser console while developing: sae.store.get()
+
+  // the 3D Earth last, so three.js never delays the charts; if it cannot start, the 2D planet stays.
+  // Phone-sized screens skip it to save data and battery, and so does a browser without WebGL
+  // (checked here first, so three.js is not even downloaded).
+  const probe = document.createElement("canvas");
+  const webgl = Boolean(probe.getContext("webgl2") || probe.getContext("webgl"));
+  if (webgl && window.innerWidth >= 700) {
+    import("./earth.js")
+      .then(({ initEarth }) => initEarth(document.getElementById("earth"), { reducedMotion }))
+      .then((earth) => {
+        if (!earth) return;
+        ctx.earth = earth;
+        earth.setMonitor(ctx.store.get().monitor);
+        ctx.background.setPlanetVisible(false);
+      })
+      .catch((error) => console.info("Earth: not loaded, keeping the 2D planet.", error.message));
+  }
 }
 
 boot().catch((error) => {

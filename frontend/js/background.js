@@ -60,6 +60,7 @@ export function initBackground(canvas, { reducedMotion = false } = {}) {
   let nextShot = 4000;
   let running = false;
   let rafId = 0;
+  let planetVisible = true;
 
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -83,7 +84,8 @@ export function initBackground(canvas, { reducedMotion = false } = {}) {
   }
 
   function drawPlanet() {
-    // the curve of a planet low on the left: a placeholder until the three.js Earth (Phase 4e)
+    // the curve of a planet low on the left: shown until the three.js Earth (earth.js) is ready,
+    // and kept if WebGL or the Earth texture is unavailable
     const cx = width * 0.12 - offset * 0.6;
     const cy = height * 1.55;
     const r = height * 0.85;
@@ -181,7 +183,7 @@ export function initBackground(canvas, { reducedMotion = false } = {}) {
       }
       drawShootingStars(dt);
     }
-    drawPlanet();
+    if (planetVisible) drawPlanet();
   }
 
   let lastFrame = 0;
@@ -210,6 +212,11 @@ export function initBackground(canvas, { reducedMotion = false } = {}) {
   start();
 
   return {
+    /** Hide the 2D planet once the 3D Earth has taken its place. */
+    setPlanetVisible(visible) {
+      planetVisible = visible;
+      if (!running) draw(performance.now());
+    },
     /** Slide the sky for monitor 1 or 2. */
     setMonitor(monitor) {
       target = monitor === 2 ? PARALLAX_PX : 0;
