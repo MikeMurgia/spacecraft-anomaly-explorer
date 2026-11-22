@@ -88,6 +88,7 @@ export function createScores(panel, ctx) {
 
     for (const detector of ctx.results.detectors) {
       const result = source.detectors?.[detector.key];
+      if (result?.status === "not_implemented") continue; // the conformal stub stays off the table
       const chosen = detector.key === state.detector;
       const tr = document.createElement("tr");
       tr.className = chosen ? "chosen" : "";
@@ -105,7 +106,7 @@ export function createScores(panel, ctx) {
         tr.classList.add("off");
         const cell = document.createElement("td");
         cell.colSpan = 3;
-        cell.textContent = result?.status === "not_implemented" ? "not implemented yet" : "not scored";
+        cell.textContent = "not scored";
         tr.append(cell);
       } else {
         for (const [metric, ci, skill] of [
@@ -150,11 +151,16 @@ export function createScores(panel, ctx) {
     table.append(caption, cols, head, rows);
     body.replaceChildren(table);
 
+    // Mission 1 has so few rare events that flagging every event stays under about 0.5 false
+    // alarms a month; at a bigger budget every detector "catches" everything, which says nothing
+    const reachable = d3.max(Object.values(source.detectors ?? {}), (r) => (r.status === "ok" ? d3.max(r.budget.false_alarms_per_month) : 0)) ?? 0;
+    const tooLoose = state.budget >= reachable;
+
     setNotice(
       panel,
       setting === "transfer"
-        ? [`Trained on all of M${transfer.train}, scored on M${transfer.test}. Rules A–C learn nothing, so they match M${transfer.test}'s own scores.`]
-        : [`${ctx.results.cv.splits}-fold CV × ${ctx.results.cv.repeats}, seed ${ctx.results.seed} · bar: 95% CI · tick: no skill`],
+        ? [`Trained on all of M${transfer.train}, scored on M${transfer.test}. Rules A–C learn nothing, so they match M${transfer.test}'s own scores.`, tooLoose ? ` Flagging every event costs only ${perMonth(reachable)} false alarms a month here: turn the knob down.` : ""]
+        : [`${ctx.results.cv.splits}-fold CV × ${ctx.results.cv.repeats}, seed ${ctx.results.seed} · bar: 95% CI · tick: no skill`, tooLoose ? ` · flagging every event costs only ${perMonth(reachable)}/mo here: turn the knob down` : ""],
     );
   }
 

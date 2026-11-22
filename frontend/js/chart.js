@@ -111,8 +111,11 @@ export function showTooltipAt(element, title, rows) {
   showTooltip(box.right, box.bottom, title, rows);
 }
 
-/** Short numeric label: 3 significant digits, no trailing zeros. */
-export const short = (value) => (value === null || value === undefined ? "n/a" : d3.format(".3~g")(value));
+/** Short numeric label: 3 significant digits, no trailing zeros; thousands written out ("1,000", not "1e+3"). */
+export function short(value) {
+  if (value === null || value === undefined) return "n/a";
+  return Math.abs(value) >= 1000 ? d3.format(",.0f")(value) : d3.format(".3~g")(value);
+}
 
 /** Tick values for a log axis: the powers of ten, plus 3s when the range is under two decades. */
 export function logTicks(scale) {

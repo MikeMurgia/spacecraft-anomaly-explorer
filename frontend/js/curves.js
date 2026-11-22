@@ -131,7 +131,9 @@ export function createCurves(panel, ctx) {
     // detector list with each one's area under the curve and interval (the legend, and the picker)
     const list = svg.append("g").attr("transform", `translate(${width - LIST_W},${MARGIN.top + 4})`);
     list.append("text").attr("class", "col-head").attr("y", 0).text(`${state.metric === "roc" ? "ROC-AUC" : "PR-AUC (avg precision)"}`);
-    const rows = [...ctx.results.detectors].map((d) => ({ ...d, result: mission.detectors[d.key] }));
+    const rows = ctx.results.detectors
+      .map((d) => ({ ...d, result: mission.detectors[d.key] }))
+      .filter((d) => d.result?.status !== "not_implemented"); // the conformal stub stays off the list
     const itemH = Math.min(34, (height - MARGIN.top - 24) / rows.length); // shrink the spacing on short screens
     const item = list
       .selectAll("g.curve-item")
@@ -165,7 +167,7 @@ export function createCurves(panel, ctx) {
       .attr("class", "item-value")
       .attr("x", 20)
       .attr("y", 13)
-      .text((d) => (d.result?.status === "ok" ? `${fmt(d.result[metric.auc])} [${fmt(d.result[metric.ci][0])}, ${fmt(d.result[metric.ci][1])}]` : d.result?.status === "not_implemented" ? "not implemented yet" : "not scored"));
+      .text((d) => (d.result?.status === "ok" ? `${fmt(d.result[metric.auc])} [${fmt(d.result[metric.ci][0])}, ${fmt(d.result[metric.ci][1])}]` : "not scored"));
 
     setNotice(panel, [
       [`${chosen.key} · ${chosen.label}`, "b"],

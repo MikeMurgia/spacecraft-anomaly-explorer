@@ -1,7 +1,4 @@
-"""Conformal rare-event detector
-
-The logic inside fit() and score() is written by me, Michael Murgia. This file's interface and
-empty methods were set up with AI assistance (see docs/AI_USAGE.md).
+"""Conformal rare-event detector (not implemented yet)
 
 Idea: learn what ordinary rare events look like, using only the training fold's Rare Event rows.
 Score each event by how unlike them it is, as a conformal p-value against a held-out calibration
@@ -31,7 +28,7 @@ class ConformalRareEventDetector:
     learns = True  # fit() uses the labels to pick out the rare events
 
     def fit(self, X: pd.DataFrame, y: np.ndarray) -> ConformalRareEventDetector:
-        raise NotImplementedError("Phase 3: write ConformalRareEventDetector.fit")
+        raise NotImplementedError("ConformalRareEventDetector.fit is not implemented yet")
 
     def score(self, X: pd.DataFrame) -> np.ndarray:
-        raise NotImplementedError("Phase 3: write ConformalRareEventDetector.score")
+        raise NotImplementedError("ConformalRareEventDetector.score is not implemented yet")

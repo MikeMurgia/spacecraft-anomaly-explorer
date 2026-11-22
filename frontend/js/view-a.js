@@ -39,7 +39,10 @@ export function createParallelCoordinates(panel, ctx) {
   function point(event, key) {
     const value = event[key];
     const missing = value === null || value === undefined || !Number.isFinite(value);
-    return [x(key), missing ? innerHeight + NA_GAP : y[key](value)];
+    if (missing) return [x(key), innerHeight + NA_GAP];
+    // a log axis cannot show 0 (an instant event lasts 0 h): pin such values to the bottom of the axis
+    const scale = y[key];
+    return [x(key), scale(FEATURES[key].scale === "log" ? Math.max(value, scale.domain()[0]) : value)];
   }
 
   function build() {

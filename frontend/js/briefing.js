@@ -100,7 +100,7 @@ export function createBriefing(panel, ctx) {
       card.append(head, facts);
 
       const withFoot = height >= 130; // drop the footnote line on short screens rather than squash the chart
-      const chartH = Math.max(30, height - (withFoot ? 72 : 54)); // card padding and the text lines around the chart
+      const chartH = Math.max(30, height - (withFoot ? 86 : 68)); // card padding and the text lines around the chart (facts may take two)
       const svg = d3
         .select(card)
         .append("svg")

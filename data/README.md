@@ -10,12 +10,17 @@ all timestamps to start in the year 2000.
 
 ## Raw data (not in this repo)
 
-The raw telemetry is several GB, so it is never committed. To reproduce:
+The raw telemetry is several GB and has its own licence, so it is never committed. To reproduce:
 
 1. Download the dataset from the DOI above.
-2. Unzip it anywhere **outside** this repo, so you have a folder containing
-   `ESA-Mission1`, `ESA-Mission2` and `ESA-Mission3`.
-3. Point the pipeline at it (PowerShell): `$env:ESA_ROOT = "C:\path\to\ESA-ADB"`
+2. Put the `ESA-Mission1`, `ESA-Mission2` and `ESA-Mission3` folders in `data/raw/`. That folder
+   is git-ignored, and the pipeline looks there by default.
+3. Or keep them anywhere else and point the pipeline at them (PowerShell):
+   `$env:ESA_ROOT = "C:\path\to\ESA-ADB"`
+
+Each mission folder holds `labels.csv`, `anomaly_types.csv`, `channels.csv` and `channels/`, one
+zipped telemetry file per channel. Missions 1 and 2 also have `telecommands/`, which this project
+does not use.
 
 ## Processed data (`data/processed/`)
 
@@ -52,6 +57,10 @@ Regenerate with `python -m pipeline.prep_data` (all missions) or `--missions 2` 
   them is a real communication gap in either direction, and swapping would have invented gaps.
 - *Long events* (span over one week, e.g. Mission 2's 465-hour anomaly `m2_id_633`): kept, because
   each is a genuine labelled event whose pieces cover the whole span, and flagged `long_event`.
+- *Instant events* (start = end, so `covered_h` = 0): 3 in Mission 1 (2 anomalies, 1 rare event)
+  and 3 rare events in Mission 3. Kept as labelled. Their window holds too few samples for features,
+  so they end up with `feature_status` = `no_usable_channel`; on the app's log-scale duration axes
+  they sit at the bottom of the axis.
 
 ### 2. Telemetry features (`pipeline/features.py`)
 
@@ -94,8 +103,35 @@ channels), `state_shift_median` (categorical channels), `frozen_delta_median` (a
 `n_channels_alarmed` and `first_alarm_h`.
 `feature_status` is `ok`, `no_usable_channel`, or `not_computed` (other categories).
 
-### 3. Normalisation
+### 3. Missing values
 
-Features are stored raw. Ratios are already on a log scale centred at 0. Any further scaling
-(rank or robust scaling for chart axes and model inputs) happens in the analysis and app code,
-and is documented there.
+An event gets no telemetry features when none of its channels has enough data (`feature_status` =
+`no_usable_channel`). Such events are kept in the tables and shown in the app (in a separate "n/a"
+row under each axis of view A), but left out of detector scoring:
+
+| Mission | Anomalies scored / labelled | Rare events scored / labelled |
+|---|---|---|
+| 1 | 104 / 118 | 76 / 78 |
+| 2 | 31 / 31 | 613 / 613 |
+| 3 | not scored (8 anomalies) | not scored (25 rare events) |
+
+Mission 1 loses mostly anomalies, so its scores lean towards the anomalies that have telemetry; the
+report states this. Mission 3's channels are states, so it has no variance ratio by design.
+
+### 4. Normalisation
+
+Features are stored raw. The variance ratio is already a log ratio centred at 0; channel counts and
+durations are log-transformed where they are model inputs (`log_n_channels`, `log_covered_h`).
+The logistic-regression detectors standardise their inputs inside each cross-validation fold
+(scikit-learn `StandardScaler`, fitted on the training fold only). In the app, view C shows each
+channel in standard deviations from its own baseline mean (clipped at ±10σ), and channel counts and
+durations use log axes.
+
+### 5. Static export (`pipeline/export_static.py`)
+
+The website cannot load GB of telemetry, so each Anomaly and Rare Event gets one JSON file in
+`frontend/api/signals/`. Its time window runs from one baseline length before the event to one
+after it; the window is cut into 200 bins, and each channel keeps the minimum and maximum per bin
+(numeric) or the most common state per bin (states), plus its features and alarm time. Values are
+rounded to 5 significant digits. The export also writes `events-mN.json` (one row per event) and
+`meta.json` (counts per mission). Total: 877 files, about 48 MB.

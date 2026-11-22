@@ -27,7 +27,7 @@ def test_library_logistic_learns_a_separable_pattern():
     assert scores[y == 1].mean() > scores[y == 0].mean()
 
 
-def test_conformal_detector_is_a_stub_until_phase_3():
+def test_conformal_detector_is_a_stub_until_implemented():
     # Replace this test with real ones once fit() and score() are written.
     with pytest.raises(NotImplementedError):
         ConformalRareEventDetector().fit(X, np.array([0, 1, 0]))

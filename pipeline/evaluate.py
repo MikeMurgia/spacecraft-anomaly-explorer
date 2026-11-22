@@ -1,4 +1,4 @@
-"""Phase 2: evaluate every detector on every scored mission, and Mission 2 -> Mission 1 transfer.
+"""Evaluate every detector on every scored mission, and Mission 2 -> Mission 1 transfer.
 
 Run from the repo root after pipeline.prep_data:
     python -m pipeline.evaluate

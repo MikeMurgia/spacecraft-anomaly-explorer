@@ -33,8 +33,10 @@ export function createBudget(panel, ctx) {
 
   function buttons(mission) {
     const state = ctx.store.get();
+    // a detector that is not implemented yet (the conformal stub) gets no button
+    const listed = ctx.results.detectors.filter((d) => mission?.detectors?.[d.key]?.status !== "not_implemented");
     tools.replaceChildren(
-      ...ctx.results.detectors.map((detector) => {
+      ...listed.map((detector) => {
         const result = mission?.detectors?.[detector.key];
         const button = document.createElement("button");
         button.type = "button";
@@ -43,7 +45,7 @@ export function createBudget(panel, ctx) {
         button.setAttribute("aria-pressed", String(state.detector === detector.key));
         if (!result || result.status !== "ok") {
           button.disabled = true;
-          button.title += result?.status === "not_implemented" ? " (not implemented yet)" : " (not scored)";
+          button.title += " (not scored)";
         }
         button.addEventListener("click", () => ctx.store.set({ detector: detector.key }));
         return button;
